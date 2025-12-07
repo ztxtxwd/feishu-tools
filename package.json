@@ -1,0 +1,57 @@
+{
+  "name": "feishu-tools",
+  "version": "0.1.0",
+  "description": "Feishu SDK wrapper for MCP server and agent development",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "check-version": "node scripts/check-version.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "feishu",
+    "lark",
+    "mcp",
+    "agent",
+    "sdk"
+  ],
+  "author": "Tianxiong Zhao",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ztxtxwd/feishu-tools.git"
+  },
+  "homepage": "https://github.com/ztxtxwd/feishu-tools",
+  "bugs": "https://github.com/ztxtxwd/feishu-tools/issues",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.3",
+    "@langchain/langgraph": "^1.0.4",
+    "@langchain/openai": "^1.1.3",
+    "@larksuiteoapi/node-sdk": "^1.55.0",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "dotenv": "^17.2.3",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}
