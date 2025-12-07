@@ -30,12 +30,14 @@ export function toLangChainTool(
 ): StructuredToolInterface {
   return tool(
     async (input: unknown) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MCP RequestHandlerExtra not needed for LangChain
       const result = await toolDef.callback(context, input, {} as any);
       return extractText(result);
     },
     {
       name: toolDef.name,
       description: toolDef.description || "",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema type mismatch between MCP SDK and LangChain
       schema: toolDef.inputSchema as any,
     }
   );
