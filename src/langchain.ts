@@ -1,6 +1,5 @@
 import { tool, type StructuredToolInterface } from "@langchain/core/tools";
 import type { ToolDefinition, FeishuContext } from "./types.js";
-import type { AnySchema } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 
 /**
  * 将 MCP CallToolResult 转换为字符串
@@ -25,7 +24,7 @@ function extractText(result: { content: { type: string; text?: string }[]; isErr
  * 将单个 feishu-tools 的 ToolDefinition 转换为 LangChain tool
  */
 export function toLangChainTool(
-  toolDef: ToolDefinition<AnySchema, AnySchema>,
+  toolDef: ToolDefinition<any, any>,
   context: FeishuContext
 ): StructuredToolInterface {
   return tool(
@@ -47,7 +46,7 @@ export function toLangChainTool(
  * 将多个 feishu-tools 的 ToolDefinition 批量转换为 LangChain tools
  */
 export function toLangChainTools(
-  tools: ToolDefinition<AnySchema, AnySchema>[],
+  tools: ToolDefinition<any, any>[],
   context: FeishuContext
 ): StructuredToolInterface[] {
   return tools.map((t) => toLangChainTool(t, context));
