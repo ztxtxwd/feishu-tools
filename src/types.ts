@@ -10,10 +10,10 @@ import { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 export interface FeishuContext {
   /** 飞书 SDK Client 实例 */
   client?: Client;
-  /** 获取租户访问令牌的函数，每次调用时动态获取以应对过期刷新 */
-  getTenantAccessToken?: () => Promise<string>;
-  /** 获取用户访问令牌的函数，每次调用时动态获取以应对过期刷新 */
-  getUserAccessToken?: () => Promise<string>;
+  /** 租户访问令牌 */
+  tenantAccessToken?: string;
+  /** 用户访问令牌 */
+  userAccessToken?: string;
 }
 
 /**
