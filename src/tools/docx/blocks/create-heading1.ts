@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
+import * as lark from '@larksuiteoapi/node-sdk'
 
 /**
  * 在飞书文档中创建一级标题块
@@ -48,7 +49,8 @@ export const createHeading1Block = defineTool({
             },
           ],
         },
-      });
+      }		,context.userAccessToken ? lark.withUserAccessToken(context.userAccessToken) : undefined,
+    );
 
       if (response.code !== 0) {
         return {
