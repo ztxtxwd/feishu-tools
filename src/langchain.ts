@@ -1,4 +1,5 @@
 import { tool, type StructuredToolInterface } from "@langchain/core/tools";
+import type { ShapeOutput, ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import type { ToolDefinition, FeishuContext } from "./types.js";
 
 /**
@@ -24,13 +25,13 @@ function extractText(result: { content: { type: string; text?: string }[]; isErr
  * 将单个 feishu-tools 的 ToolDefinition 转换为 LangChain tool
  */
 export function toLangChainTool(
-  toolDef: ToolDefinition<any, any>,
+  toolDef: ToolDefinition,
   context: FeishuContext
 ): StructuredToolInterface {
   return tool(
     async (input: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- MCP RequestHandlerExtra not needed for LangChain
-      const result = await toolDef.callback(context, input, {} as any);
+      const result = await toolDef.callback(context, input as ShapeOutput<ZodRawShapeCompat>, {} as any);
       return extractText(result);
     },
     {
@@ -46,7 +47,7 @@ export function toLangChainTool(
  * 将多个 feishu-tools 的 ToolDefinition 批量转换为 LangChain tools
  */
 export function toLangChainTools(
-  tools: ToolDefinition<any, any>[],
+  tools: ToolDefinition[],
   context: FeishuContext
 ): StructuredToolInterface[] {
   return tools.map((t) => toLangChainTool(t, context));

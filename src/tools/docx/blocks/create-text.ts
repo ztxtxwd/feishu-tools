@@ -8,12 +8,12 @@ export const createTextBlock = defineTool({
   name: "create_text_block",
   description:
     "在飞书文档的指定位置创建文本块。需要提供文档 ID、父块 ID、插入位置索引和文本内容。",
-  inputSchema: z.object({
+  inputSchema: {
     document_id: z.string().describe("飞书文档的唯一标识符"),
     block_id: z.string().describe("父块的 ID，新块将作为其子块插入"),
     index: z.number().int().min(0).describe("插入位置的索引，从 0 开始"),
     text: z.string().describe("文本内容"),
-  }),
+  },
   callback: async (context, args) => {
     if (!context.client) {
       return {

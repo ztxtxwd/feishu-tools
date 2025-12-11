@@ -1,8 +1,8 @@
 import type { Client } from "@larksuiteoapi/node-sdk";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult, ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
-import { AnySchema, SchemaOutput, ShapeOutput, ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
-import { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
+import type { ZodRawShapeCompat, ShapeOutput } from "@modelcontextprotocol/sdk/server/zod-compat.js";
+import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 
 /**
  * 飞书凭证上下文
@@ -19,17 +19,16 @@ export interface FeishuContext {
 /**
  * 飞书工具的回调函数类型
  */
-export type FeishuToolCallback<Args extends undefined | ZodRawShapeCompat | AnySchema = undefined> =
-  Args extends ZodRawShapeCompat
-    ? (context: FeishuContext, args: ShapeOutput<Args>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => CallToolResult | Promise<CallToolResult>
-    : Args extends AnySchema
-      ? (context: FeishuContext, args: SchemaOutput<Args>, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => CallToolResult | Promise<CallToolResult>
-      : (context: FeishuContext, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) => CallToolResult | Promise<CallToolResult>;
+export type FeishuToolCallback<Args extends ZodRawShapeCompat = ZodRawShapeCompat> = (
+  context: FeishuContext,
+  args: ShapeOutput<Args>,
+  extra: RequestHandlerExtra<ServerRequest, ServerNotification>
+) => CallToolResult | Promise<CallToolResult>;
 
 /**
  * 工具定义接口，与 MCP registerTool 参数对齐
  */
-export interface ToolDefinition<OutputArgs extends ZodRawShapeCompat | AnySchema, InputArgs extends undefined | ZodRawShapeCompat | AnySchema = undefined> {
+export interface ToolDefinition<InputArgs extends ZodRawShapeCompat = ZodRawShapeCompat, OutputArgs extends ZodRawShapeCompat = ZodRawShapeCompat> {
   /** 工具名称，用于标识和调用 */
   name: string;
   /** 工具描述 */

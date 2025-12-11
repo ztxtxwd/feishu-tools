@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
+import type { ShapeOutput, ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import type { ToolDefinition, FeishuContext } from "./types.js";
 
 /**
@@ -8,7 +9,7 @@ import type { ToolDefinition, FeishuContext } from "./types.js";
  */
 export function registerTools(
   server: McpServer,
-  tools: ToolDefinition<any, any>[],
+  tools: ToolDefinition[],
   context: FeishuContext
 ): void {
   for (const tool of tools) {
@@ -21,7 +22,7 @@ export function registerTools(
         annotations: tool.annotations,
       },
       (args: unknown, extra: RequestHandlerExtra<ServerRequest, ServerNotification>) =>
-        tool.callback(context, args, extra)
+        tool.callback(context, args as ShapeOutput<ZodRawShapeCompat>, extra)
     );
   }
 }
