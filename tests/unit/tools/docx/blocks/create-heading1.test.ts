@@ -115,32 +115,35 @@ describe("createHeading1Block", () => {
 
       await createHeading1Block.callback(context, args, mockExtra);
 
-      expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith({
-        path: {
-          document_id: "test_doc_id",
-          block_id: "test_block_id",
-        },
-        params: {
-          document_revision_id: -1,
-        },
-        data: {
-          index: 5,
-          children: [
-            {
-              block_type: 3,
-              heading1: {
-                elements: [
-                  {
-                    text_run: {
-                      content: "Heading Text Content",
+      expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith(
+        {
+          path: {
+            document_id: "test_doc_id",
+            block_id: "test_block_id",
+          },
+          params: {
+            document_revision_id: -1,
+          },
+          data: {
+            index: 5,
+            children: [
+              {
+                block_type: 3,
+                heading1: {
+                  elements: [
+                    {
+                      text_run: {
+                        content: "Heading Text Content",
+                      },
                     },
-                  },
-                ],
+                  ],
+                },
               },
-            },
-          ],
+            ],
+          },
         },
-      });
+        undefined
+      );
     });
 
     it("should handle empty text", async () => {
@@ -170,7 +173,8 @@ describe("createHeading1Block", () => {
               }),
             ],
           }),
-        })
+        }),
+        undefined
       );
     });
 
@@ -202,7 +206,8 @@ describe("createHeading1Block", () => {
               }),
             ],
           }),
-        })
+        }),
+        undefined
       );
     });
   });
