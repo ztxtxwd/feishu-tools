@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
+import { resolveToken } from "../../../utils/token.js";
 import * as lark from '@larksuiteoapi/node-sdk'
 
 /**
@@ -24,6 +25,8 @@ export const createHeading1Block = defineTool({
     }
 
     try {
+      const userAccessToken = await resolveToken(context.getUserAccessToken);
+
       const response = await context.client.docx.v1.documentBlockChildren.create({
         path: {
           document_id: args.document_id,
@@ -49,8 +52,7 @@ export const createHeading1Block = defineTool({
             },
           ],
         },
-      }		,context.userAccessToken ? lark.withUserAccessToken(context.userAccessToken) : undefined,
-    );
+      }, userAccessToken ? lark.withUserAccessToken(userAccessToken) : undefined);
 
       if (response.code !== 0) {
         return {

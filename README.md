@@ -55,12 +55,22 @@ const agent = createReactAgent({ llm, tools });
 
 ### 用户访问令牌（UAT）支持
 
-对于需要用户身份的操作，可以传递 `userAccessToken`：
+对于需要用户身份的操作，支持静态 token 或动态获取函数：
 
 ```typescript
+// 方式 1: 静态 token（适用于短期任务）
 registerTools(server, tools, {
   client,
-  userAccessToken: "u-xxx", // 用户访问令牌
+  getUserAccessToken: "u-xxx",
+});
+
+// 方式 2: 动态获取函数（推荐，支持 token 刷新）
+registerTools(server, tools, {
+  client,
+  getUserAccessToken: async () => {
+    // 从存储获取最新 token，支持自动刷新
+    return await getLatestUserAccessToken();
+  },
 });
 ```
 
@@ -139,7 +149,10 @@ export const createQuoteBlock = defineTool({
 
 - `server`: MCP Server 实例
 - `tools`: 工具定义数组
-- `context`: 飞书上下文，包含 `client`、`tenantAccessToken`、`userAccessToken`
+- `context`: 飞书上下文
+  - `client`: 飞书 SDK Client 实例
+  - `getTenantAccessToken?`: 租户访问令牌（字符串或返回字符串的函数）
+  - `getUserAccessToken?`: 用户访问令牌（字符串或返回字符串的函数）
 
 ### `toLangChainTools(tools, context)`
 

@@ -5,15 +5,20 @@ import type { ZodRawShapeCompat, ShapeOutput } from "@modelcontextprotocol/sdk/s
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 
 /**
+ * Token Provider 类型，支持静态值或动态获取函数
+ */
+export type TokenProvider = string | (() => string | Promise<string>);
+
+/**
  * 飞书凭证上下文
  */
 export interface FeishuContext {
   /** 飞书 SDK Client 实例 */
   client?: Client;
-  /** 租户访问令牌 */
-  tenantAccessToken?: string;
-  /** 用户访问令牌 */
-  userAccessToken?: string;
+  /** 租户访问令牌（支持静态值或动态获取函数） */
+  getTenantAccessToken?: TokenProvider;
+  /** 用户访问令牌（支持静态值或动态获取函数） */
+  getUserAccessToken?: TokenProvider;
 }
 
 /**

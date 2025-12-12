@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
+import { resolveToken } from "../../../utils/token.js";
+import * as lark from '@larksuiteoapi/node-sdk'
 
 /**
  * 在飞书文档中创建文本块
@@ -22,42 +24,52 @@ export const createTextBlock = defineTool({
       };
     }
 
-    const response = await context.client.docx.documentBlockChildren.create({
-      path: {
-        document_id: args.document_id,
-        block_id: args.block_id,
-      },
-      params: {
-        document_revision_id: -1,
-      },
-      data: {
-        index: args.index,
-        children: [
-          {
-            block_type: 2, // text
-            text: {
-              elements: [
-                {
-                  text_run: {
-                    content: args.text,
-                  },
-                },
-              ],
-            },
-          },
-        ],
-      },
-    });
+    try {
+      const userAccessToken = await resolveToken(context.getUserAccessToken);
 
-    if (response.code !== 0) {
+      const response = await context.client.docx.v1.documentBlockChildren.create({
+        path: {
+          document_id: args.document_id,
+          block_id: args.block_id,
+        },
+        params: {
+          document_revision_id: -1,
+        },
+        data: {
+          index: args.index,
+          children: [
+            {
+              block_type: 2, // text
+              text: {
+                elements: [
+                  {
+                    text_run: {
+                      content: args.text,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      }, userAccessToken ? lark.withUserAccessToken(userAccessToken) : undefined);
+
+      if (response.code !== 0) {
+        return {
+          content: [{ type: "text" as const, text: response.msg || `API error: ${response.code}` }],
+          isError: true,
+        };
+      }
+
       return {
-        content: [{ type: "text" as const, text: response.msg || `API error: ${response.code}` }],
+        content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,
       };
     }
-
-    return {
-      content: [{ type: "text" as const, text: JSON.stringify(response.data, null, 2) }],
-    };
   },
 });

@@ -146,6 +146,85 @@ describe("createHeading1Block", () => {
       );
     });
 
+    it("should pass user access token when provided as string", async () => {
+      mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue({
+        code: 0,
+        data: {},
+      });
+
+      const contextWithToken: FeishuContext = {
+        client: mockClient,
+        getUserAccessToken: "static_user_token",
+      };
+
+      const args = {
+        document_id: "doc123",
+        block_id: "block456",
+        index: 0,
+        text: "Test",
+      };
+
+      await createHeading1Block.callback(contextWithToken, args, mockExtra);
+
+      // Should be called with a second argument (the withUserAccessToken result)
+      expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.anything()
+      );
+    });
+
+    it("should pass user access token when provided as sync function", async () => {
+      mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue({
+        code: 0,
+        data: {},
+      });
+
+      const contextWithToken: FeishuContext = {
+        client: mockClient,
+        getUserAccessToken: () => "sync_function_token",
+      };
+
+      const args = {
+        document_id: "doc123",
+        block_id: "block456",
+        index: 0,
+        text: "Test",
+      };
+
+      await createHeading1Block.callback(contextWithToken, args, mockExtra);
+
+      expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.anything()
+      );
+    });
+
+    it("should pass user access token when provided as async function", async () => {
+      mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue({
+        code: 0,
+        data: {},
+      });
+
+      const contextWithToken: FeishuContext = {
+        client: mockClient,
+        getUserAccessToken: async () => "async_function_token",
+      };
+
+      const args = {
+        document_id: "doc123",
+        block_id: "block456",
+        index: 0,
+        text: "Test",
+      };
+
+      await createHeading1Block.callback(contextWithToken, args, mockExtra);
+
+      expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.anything()
+      );
+    });
+
     it("should handle empty text", async () => {
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue({
         code: 0,
