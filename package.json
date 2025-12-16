@@ -1,6 +1,6 @@
 {
   "name": "feishu-tools",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Feishu SDK wrapper for MCP server and agent development",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
