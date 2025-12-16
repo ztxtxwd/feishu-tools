@@ -2,11 +2,14 @@
 export { registerTools } from "./mcp.js";
 export { defineTool } from "./define-tool.js";
 export { toLangChainTool, toLangChainTools } from "./langchain.js";
+export { formatDescription } from "./types.js";
 export type {
   ToolDefinition,
   FeishuContext,
   FeishuToolCallback,
   TokenProvider,
+  ToolDescription,
+  StructuredToolDescription,
 } from "./types.js";
 
 // Utils

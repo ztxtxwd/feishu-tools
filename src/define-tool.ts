@@ -1,4 +1,5 @@
-import type { ToolDefinition, FeishuToolCallback } from "./types.js";
+import type { ToolDefinition, FeishuToolCallback, ToolDescription } from "./types.js";
+import { formatDescription } from "./types.js";
 import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 import type { ZodRawShapeCompat } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 
@@ -10,7 +11,7 @@ interface DefineToolConfig<
   OutputArgs extends ZodRawShapeCompat = ZodRawShapeCompat,
 > {
   name: string;
-  description?: string;
+  description?: ToolDescription;
   inputSchema: InputArgs;
   outputSchema?: OutputArgs;
   annotations?: ToolAnnotations;
@@ -24,5 +25,9 @@ export function defineTool<
   InputArgs extends ZodRawShapeCompat,
   OutputArgs extends ZodRawShapeCompat = ZodRawShapeCompat,
 >(config: DefineToolConfig<InputArgs, OutputArgs>): ToolDefinition<InputArgs, OutputArgs> {
-  return config as ToolDefinition<InputArgs, OutputArgs>;
+  const { description, ...rest } = config;
+  return {
+    ...rest,
+    description: description ? formatDescription(description) : undefined,
+  } as ToolDefinition<InputArgs, OutputArgs>;
 }

@@ -8,7 +8,11 @@ import * as lark from "@larksuiteoapi/node-sdk";
  */
 export const getUserInfo = defineTool({
   name: "get_user_info",
-  description: "获取当前登录用户的信息，包括用户名、头像、邮箱、手机号、用户 ID 等。需要用户授权（User Access Token）。",
+  description: {
+    summary: "获取当前登录用户的信息，包括用户名、头像、邮箱、手机号、用户 ID 等。",
+    bestFor: "获取当前登录用户的基本信息",
+    notRecommendedFor: "获取其他用户的信息（请使用通讯录相关接口）",
+  },
   inputSchema: {},
   outputSchema: {
     name: z.string().optional().describe("用户名"),

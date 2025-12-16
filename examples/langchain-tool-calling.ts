@@ -15,7 +15,9 @@ import {
   toLangChainTools,
   createHeading1Block,
   createTextBlock,
+  getUserInfo,
   type FeishuContext,
+  type ToolDefinition,
 } from "../src/index.js";
 
 // 创建飞书 Client
@@ -24,10 +26,16 @@ const feishuClient = new Client({
   appSecret: process.env.FEISHU_APP_SECRET!,
 });
 
-const context: FeishuContext = { client: feishuClient };
+const context: FeishuContext = {
+  client: feishuClient,
+  getUserAccessToken: async () => process.env.FEISHU_USER_ACCESS_TOKEN!,
+};
 
 // 转换工具
-const tools = toLangChainTools([createHeading1Block, createTextBlock], context);
+const tools = toLangChainTools(
+  [createHeading1Block, createTextBlock, getUserInfo] as ToolDefinition[],
+  context
+);
 
 // 绑定工具到模型
 const model = new ChatOpenAI({ model: "gpt-4o" });

@@ -5,6 +5,8 @@ import {
   registerTools,
   createHeading1Block,
   createTextBlock,
+  getUserInfo,
+  type ToolDefinition,
 } from "../src/index.js";
 
 // 创建飞书 Client
@@ -20,15 +22,19 @@ const server = new McpServer({
 });
 
 // 批量注册工具
-registerTools(server, [createHeading1Block, createTextBlock], {
-  client: feishuClient,
-  getTenantAccessToken: async () => {
-    return "test";
-  },
-  getUserAccessToken: async () => {
-    return "test";
-  },
-});
+registerTools(
+  server,
+  [createHeading1Block, createTextBlock, getUserInfo] as ToolDefinition[],
+  {
+    client: feishuClient,
+    getTenantAccessToken: async () => {
+      return "test";
+    },
+    getUserAccessToken: async () => {
+      return "test";
+    },
+  }
+);
 
 // 启动服务器
 async function main() {

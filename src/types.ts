@@ -10,6 +10,46 @@ import type { ToolAnnotations } from "@modelcontextprotocol/sdk/types.js";
 export type TokenProvider = string | (() => string | Promise<string>);
 
 /**
+ * 结构化工具描述
+ */
+export interface StructuredToolDescription {
+  /** 工具的简短描述（必填） */
+  summary: string;
+  /** 工具最适合的使用场景 */
+  bestFor?: string;
+  /** 不推荐使用该工具的场景 */
+  notRecommendedFor?: string;
+}
+
+/**
+ * 工具描述类型，支持简单字符串或结构化对象
+ */
+export type ToolDescription = string | StructuredToolDescription;
+
+/**
+ * 将工具描述格式化为字符串
+ * @param description - 工具描述（字符串或结构化对象）
+ * @returns 格式化后的描述字符串
+ */
+export function formatDescription(description: ToolDescription): string {
+  if (typeof description === "string") {
+    return description;
+  }
+
+  const parts: string[] = [description.summary];
+
+  if (description.bestFor) {
+    parts.push(`**适用于:** ${description.bestFor}`);
+  }
+
+  if (description.notRecommendedFor) {
+    parts.push(`**不适用于:** ${description.notRecommendedFor}`);
+  }
+
+  return parts.join("\n\n");
+}
+
+/**
  * 飞书凭证上下文
  */
 export interface FeishuContext {

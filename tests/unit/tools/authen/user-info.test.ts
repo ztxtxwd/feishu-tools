@@ -15,7 +15,9 @@ describe("getUserInfo", () => {
 
     it("should have description", () => {
       expect(getUserInfo.description).toBeDefined();
-      expect(getUserInfo.description).toContain("用户");
+      expect(getUserInfo.description).toContain("获取当前登录用户的信息");
+      expect(getUserInfo.description).toContain("**适用于:**");
+      expect(getUserInfo.description).toContain("**不适用于:**");
     });
 
     it("should have inputSchema defined", () => {
