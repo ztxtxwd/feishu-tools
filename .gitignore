@@ -27,3 +27,4 @@ npm-debug.log*
 # Claude settings
 .claude/settings.local.json
 node-compile-cache/*
+飞书开放平台文档系统技术架构分析.md
