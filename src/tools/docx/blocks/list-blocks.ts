@@ -78,10 +78,10 @@ const textElementSchema = z
  */
 const blockSchema = z
   .object({
-    block_id: z.string().describe("子块的唯一标识"),
-    parent_id: z.string().describe("子块的父块 ID"),
+    block_id: z.string().optional().describe("子块的唯一标识"),
+    parent_id: z.string().optional().describe("子块的父块 ID"),
     children: z.array(z.string()).optional().describe("子块的子块 ID 列表"),
-    block_type: z.number().int().describe("Block 类型"),
+    block_type: z.number().int().optional().describe("Block 类型"),
     page: z
       .object({
         style: textStyleSchema.optional(),
@@ -220,7 +220,7 @@ export const listDocumentBlocks = defineTool({
       // 否则使用迭代器模式自动获取所有块
       const allBlocks: unknown[] = [];
 
-      for await (const item of await context.client.docx.v1.documentBlock.listWithIterator(
+      for await (const page of await context.client.docx.v1.documentBlock.listWithIterator(
         {
           path: {
             document_id: args.document_id,
@@ -233,7 +233,10 @@ export const listDocumentBlocks = defineTool({
         },
         authOption
       )) {
-        allBlocks.push(item);
+        // 迭代器每次 yield 分页响应对象 { items?: [...] }，需要提取 items 数组
+        if (page?.items) {
+          allBlocks.push(...page.items);
+        }
       }
 
       const result = { items: allBlocks };

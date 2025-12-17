@@ -68,11 +68,10 @@ describe("listDocumentBlocks", () => {
         { block_id: "block1", block_type: 2 },
         { block_id: "block2", block_type: 4 },
       ];
+      // 迭代器每次 yield 分页响应对象 { items?: [...] }
       const mockIterator = {
         [Symbol.asyncIterator]: async function* () {
-          for (const item of mockItems) {
-            yield item;
-          }
+          yield { items: mockItems };
         },
       };
 
@@ -152,9 +151,10 @@ describe("listDocumentBlocks", () => {
     });
 
     it("should use tenant access token when user token is not available", async () => {
+      // 迭代器每次 yield 分页响应对象 { items?: [...] }
       const mockIterator = {
         [Symbol.asyncIterator]: async function* () {
-          yield { block_id: "block1" };
+          yield { items: [{ block_id: "block1" }] };
         },
       };
 
@@ -358,9 +358,10 @@ describe("listDocumentBlocks", () => {
 
   describe("parameter handling", () => {
     it("should handle all optional parameters in iterator mode", async () => {
+      // 迭代器每次 yield 分页响应对象 { items?: [...] }
       const mockIterator = {
         [Symbol.asyncIterator]: async function* () {
-          yield { block_id: "block1" };
+          yield { items: [{ block_id: "block1" }] };
         },
       };
 

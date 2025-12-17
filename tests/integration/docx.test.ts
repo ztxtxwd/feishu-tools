@@ -14,7 +14,7 @@
 import 'dotenv/config';
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Client } from "@larksuiteoapi/node-sdk";
-import { createHeading1Block, createTextBlock } from "../../src/tools/docx/blocks/index.js";
+import { createHeading1Block, createTextBlock, listDocumentBlocks } from "../../src/tools/docx/blocks/index.js";
 import type { FeishuContext } from "../../src/types.js";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { ServerRequest, ServerNotification } from "@modelcontextprotocol/sdk/types.js";
@@ -131,6 +131,63 @@ describe.skipIf(!hasCredentials)("Docx Blocks - Integration Tests", () => {
       const newBlockId = responseData.children[0].block_id;
       createdBlockIds.push(newBlockId);
       console.log(`Created text block: ${newBlockId}`);
+    });
+  });
+
+  describe("listDocumentBlocks", () => {
+    it("should list all blocks using iterator mode (default)", async () => {
+      const args = {
+        document_id: TEST_DOCUMENT_ID!,
+      };
+
+      const result = await listDocumentBlocks.callback(context, args, mockExtra);
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].type).toBe("text");
+
+      const responseData = JSON.parse((result.content[0] as { text: string }).text);
+      expect(responseData.items).toBeDefined();
+      expect(Array.isArray(responseData.items)).toBe(true);
+      expect(responseData.items.length).toBeGreaterThan(0);
+
+      // 验证返回的 block 结构
+      const firstBlock = responseData.items[0];
+      expect(firstBlock.block_id).toBeDefined();
+      expect(firstBlock.block_type).toBeDefined();
+
+      console.log(`Listed ${responseData.items.length} blocks in iterator mode`);
+    });
+
+    it("should list blocks with manual pagination", async () => {
+      const args = {
+        document_id: TEST_DOCUMENT_ID!,
+        page_size: 10,
+      };
+
+      const result = await listDocumentBlocks.callback(context, args, mockExtra);
+
+      expect(result.isError).toBeUndefined();
+      expect(result.content[0].type).toBe("text");
+
+      const responseData = JSON.parse((result.content[0] as { text: string }).text);
+      expect(responseData.items).toBeDefined();
+      expect(Array.isArray(responseData.items)).toBe(true);
+
+      // 手动分页模式会返回 has_more 字段
+      expect(responseData.has_more).toBeDefined();
+
+      console.log(`Listed ${responseData.items.length} blocks with manual pagination, has_more: ${responseData.has_more}`);
+    });
+
+    it("should return error for invalid document_id", async () => {
+      const args = {
+        document_id: "invalid_document_id_12345",
+        page_size: 10, // 使用手动分页模式以获得明确的错误响应
+      };
+
+      const result = await listDocumentBlocks.callback(context, args, mockExtra);
+
+      expect(result.isError).toBe(true);
     });
   });
 });
