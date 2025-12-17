@@ -107,6 +107,11 @@ describe.skipIf(!hasCredentials)("Docx Blocks - Integration Tests", () => {
       const result = await createHeading1Block.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
+      // 验证错误响应包含完整的 JSON 信息
+      const errorText = (result.content[0] as { text: string }).text;
+      const errorData = JSON.parse(errorText);
+      expect(errorData.code).toBeDefined();
+      expect(errorData.msg).toBeDefined();
     });
   });
 
@@ -188,6 +193,11 @@ describe.skipIf(!hasCredentials)("Docx Blocks - Integration Tests", () => {
       const result = await listDocumentBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
+      // 验证错误响应包含完整的 JSON 信息
+      const errorText = (result.content[0] as { text: string }).text;
+      const errorData = JSON.parse(errorText);
+      expect(errorData.code).toBeDefined();
+      expect(errorData.msg).toBeDefined();
     });
   });
 });
