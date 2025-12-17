@@ -32,6 +32,13 @@ For example, if the fullPath is `/server-docs/docs/docs/docx-v1/document/create`
 
 The response will contain the API schema with details including: HTTP method, URL path, request headers, path parameters, query parameters, request body schema, response schema, and error codes.
 
+**Important:** The Node.js SDK code example can be found at:
+```
+data.schema.apiSchema.requestBody.content["application/json"].examples["nodejs-sdk"].value
+```
+
+This path contains the complete Node.js SDK usage example for the API, which you should use to determine the correct SDK method call pattern.
+
 ### 2. Gather Requirements
 
 Based on the documentation or user input, identify:
@@ -40,7 +47,26 @@ Based on the documentation or user input, identify:
 - What parameters are required vs optional?
 - What should the success/error responses look like?
 
-### 3. Determine File Location
+### 3. Determine SDK Coverage
+
+Check if the Node.js SDK example exists at:
+```
+data.schema.apiSchema.requestBody.content["application/json"].examples["nodejs-sdk"].value
+```
+
+- **If SDK example is found**: Use Pattern A (SDK-based Tool) and follow the example code pattern
+- **If SDK example is NOT found**: Ask the user to confirm whether to use direct HTTP requests (Pattern B)
+
+Example prompt when SDK example is not found:
+```
+文档中没有找到 Node.js SDK 的示例代码。这并不代表 SDK 不支持此 API。
+
+请确认：
+1. 如果 SDK 支持此 API，请提供 SDK 调用示例，我将使用 Pattern A（SDK-based）生成工具
+2. 如果 SDK 不支持此 API，请确认，我将使用 Pattern B（Direct HTTP Request）生成工具
+```
+
+### 4. Determine File Location
 
 Follow the project structure:
 ```
@@ -52,7 +78,7 @@ For example:
 - Sheets operations: `src/tools/sheets/update-sheet-properties.ts`
 - Bitable records: `src/tools/bitable/records/create-record.ts`
 
-### 4. Choose Implementation Pattern
+### 5. Choose Implementation Pattern
 
 #### Pattern A: SDK-based Tool (when SDK covers the API)
 
@@ -215,13 +241,13 @@ export const <toolName> = defineTool({
 });
 ```
 
-### 5. Update Index Exports
+### 6. Update Index Exports
 
 Provide the necessary export statements for:
 - The tool's directory index.ts
 - Parent directory index.ts files up to src/tools/index.ts
 
-### 6. Generate Unit Test
+### 7. Generate Unit Test
 
 Create a corresponding test file at:
 ```
@@ -234,7 +260,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 ```
 
-### 7. Verify and Git Commit
+### 8. Verify and Git Commit
 
 After generating all files, perform these steps:
 
