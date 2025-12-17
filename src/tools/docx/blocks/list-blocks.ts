@@ -77,7 +77,7 @@ const textElementSchema = z
  * Block Schema
  */
 const blockSchema = z
-  .object({
+  .looseObject({
     block_id: z.string().optional().describe("子块的唯一标识"),
     parent_id: z.string().optional().describe("子块的父块 ID"),
     children: z.array(z.string()).optional().describe("子块的子块 ID 列表"),
@@ -199,7 +199,7 @@ export const listDocumentBlocks = defineTool({
             content: [
               {
                 type: "text" as const,
-                text: response.msg || `API error: ${response.code}`,
+                text: JSON.stringify(response) || `API error: ${response.code}`,
               },
             ],
             isError: true,
