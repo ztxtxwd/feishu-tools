@@ -116,8 +116,21 @@ export const <toolName> = defineTool({
       });
 
       if (result.code !== 0) {
+        // 处理频率限制错误
+        if (result.code === 99991400) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text" as const, text: `Error: ${result.msg}` }],
+          content: [{ type: "text" as const, text: result.msg || `API error: ${result.code}` }],
           isError: true,
         };
       }
@@ -128,6 +141,20 @@ export const <toolName> = defineTool({
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+
+      // 检查错误信息中是否包含频率限制错误码
+      if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,
@@ -219,8 +246,21 @@ export const <toolName> = defineTool({
 
       // 5. Handle API errors
       if (result.code !== 0) {
+        // 处理频率限制错误
+        if (result.code === 99991400) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
         return {
-          content: [{ type: "text" as const, text: `Error: ${result.msg} (code: ${result.code})` }],
+          content: [{ type: "text" as const, text: `${result.msg} (code: ${result.code})` }],
           isError: true,
         };
       }
@@ -232,6 +272,20 @@ export const <toolName> = defineTool({
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+
+      // 检查错误信息中是否包含频率限制错误码
+      if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,
@@ -311,6 +365,25 @@ For document blocks, use these block_type values:
 | code | 14 |
 | quote | 15 |
 
+## Rate Limit Error Code Reference
+
+When working with Feishu APIs, rate limit information can be found in the API documentation's `data.schema.tips` section. This includes:
+
+- **Error Code**: Usually `99991400` for rate limit exceeded
+- **HTTP Status**: Usually 400
+- **Frequency Limit**: Varies by API (e.g., 5 requests/second for document APIs)
+- **Description**: Specific rate limit details for each endpoint
+
+When generating tools:
+1. Check the `data.schema.tips` section in the API documentation for rate limit details
+2. Include the specific frequency limit in the error message (e.g., "每秒 5 次" for 5 req/s)
+3. Always mention using exponential backoff algorithm for retry logic
+
+Example rate limit handling message:
+```
+应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。
+```
+
 ## Quality Checklist
 
 Before finalizing, verify:
@@ -318,6 +391,8 @@ Before finalizing, verify:
 - [ ] outputSchema defined for response structure
 - [ ] structuredContent returned on success
 - [ ] Error handling covers all failure cases
+- [ ] Rate limit error code 99991400 handled with descriptive message
+- [ ] Rate limit message includes specific frequency limit from API docs
 - [ ] Response format follows MCP content structure
 - [ ] Imports use `.js` extension for ESM compatibility
 - [ ] Tool description uses structured format (summary, bestFor, notRecommendedFor)
