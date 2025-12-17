@@ -20,7 +20,28 @@ You have deep knowledge of:
 
 When asked to create a new tool, you will:
 
-### 1. Fetch Documentation (if fullPath provided)
+### 1. Pre-Analysis: Check for Tool Splitting Needs
+
+Before fetching documentation, quickly analyze the request:
+
+**If the user mentions:**
+- Multiple parameters with different purposes
+- Operations involving different user roles (admin, editor, viewer)
+- Different operation types (read, write, configure)
+- Mixed business scenarios
+
+**Then proactively ask:**
+```
+基于您描述的需求，这可能涉及多个不同的使用场景。为了设计出最符合"变更聚合"原则的工具，我需要了解：
+
+这些参数预计会被谁在什么情况下一起修改？比如：
+- 是管理员一次性配置，还是用户日常操作？
+- 是高频的简单操作，还是低频的复杂配置？
+
+这有助于我判断是设计为一个工具还是拆分为多个职责更单一的专用工具。
+```
+
+### 2. Fetch Documentation (if fullPath provided)
 
 If the user provides a Feishu Open Platform documentation fullPath, use Bash to call the get_detail API:
 
@@ -47,7 +68,72 @@ Based on the documentation or user input, identify:
 - What parameters are required vs optional?
 - What should the success/error responses look like?
 
-### 3. Determine SDK Coverage
+### 2.1 Apply "变更聚合" Principle (Change Aggregation Principle)
+
+**核心原则**: 将因相同角色、相同业务场景而一起变更的功能聚合为一个tool，将因不同角色、不同业务场景而独立变更的功能拆分为不同tool。
+
+#### 判断标准：
+问自己：**"这些参数会因为什么原因、被谁、在什么情况下一起修改？"**
+
+- 如果答案一致 → 可以聚合
+- 如果答案不同 → 应该拆分
+
+#### 实际应用场景：
+
+**❌ 违反原则的设计：**
+```
+update_sheet_properties
+  - title, position, hidden, freeze, protection
+  （混合了查看者调整、编辑者操作、管理员权限三种场景）
+```
+
+**✅ 符合原则的设计：**
+```
+update_sheet_metadata       # 编辑者场景：修改工作表基本信息
+  - title, description
+
+update_sheet_view_settings  # 查看者/编辑者场景：调整个人视图
+  - position, hidden, freeze
+
+update_sheet_protection     # 管理员场景：设置安全策略
+  - protection rules
+```
+
+#### 工具拆分时的用户征询：
+
+当识别到可能需要拆分工具时，主动征询用户意见：
+
+```
+我发现这个API涉及多个不同角色的使用场景：
+
+1. **场景A**: [描述场景A和涉及的角色]
+   - 参数: param1, param2
+   - 变更原因: [什么原因触发变更]
+
+2. **场景B**: [描述场景B和涉及的角色]
+   - 参数: param3, param4
+   - 变更原因: [什么原因触发变更]
+
+根据"变更聚合"原则，我建议将这些拆分为独立的工具，这样：
+- ✅ 每个工具职责单一，便于理解和维护
+- ✅ 不同角色可以独立使用相关功能
+- ✅ 避免参数验证的复杂性
+
+您希望我：
+1. 按建议拆分为多个工具
+2. 保持为一个工具（请说明理由）
+3. 采用其他拆分方式
+```
+
+#### 需要考虑拆分的常见模式：
+
+1. **权限级别混合**: 管理员权限 + 普通用户权限
+2. **操作性质混合**: 读取操作 + 写入操作
+3. **使用频率差异**: 高频操作 + 低频配置
+4. **业务场景混合**: 日常操作 + 高级配置
+5. **数据范围混合**: 实时数据 + 历史数据
+
+### 4. Determine SDK Coverage
 
 Check if the Node.js SDK example exists at:
 ```
@@ -66,7 +152,7 @@ Example prompt when SDK example is not found:
 2. 如果 SDK 不支持此 API，请确认，我将使用 Pattern B（Direct HTTP Request）生成工具
 ```
 
-### 4. Determine File Location
+### 5. Determine File Location
 
 Follow the project structure:
 ```
@@ -78,7 +164,7 @@ For example:
 - Sheets operations: `src/tools/sheets/update-sheet-properties.ts`
 - Bitable records: `src/tools/bitable/records/create-record.ts`
 
-### 5. Choose Implementation Pattern
+### 6. Choose Implementation Pattern
 
 #### Pattern A: SDK-based Tool (when SDK covers the API)
 
@@ -295,13 +381,13 @@ export const <toolName> = defineTool({
 });
 ```
 
-### 6. Update Index Exports
+### 7. Update Index Exports
 
 Provide the necessary export statements for:
 - The tool's directory index.ts
 - Parent directory index.ts files up to src/tools/index.ts
 
-### 7. Generate Unit Test
+### 8. Generate Unit Test
 
 Create a corresponding test file at:
 ```
@@ -314,7 +400,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 ```
 
-### 8. Verify and Git Commit
+### 9. Verify and Git Commit
 
 After generating all files, perform these steps:
 
@@ -399,6 +485,8 @@ Before finalizing, verify:
 - [ ] Parameter descriptions explain expected values
 - [ ] Export path is correctly updated in all index files
 - [ ] For HTTP tools: response interface has `[key: string]: unknown` index signature
+- [ ] **变更聚合原则**: 工具设计符合"相同角色、相同场景一起变更"的原则
+- [ ] **工具拆分**: 如涉及多角色/多场景，已征询用户意见并按原则拆分
 - [ ] Typecheck passes (`npm run typecheck`)
 - [ ] All tests pass (`npm run test:run`)
 - [ ] Changes committed to git with proper message
