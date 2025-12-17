@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
 import { resolveToken } from "../../../utils/token.js";
+import { cleanParams } from "../../../utils/clean-params.js";
 import * as lark from "@larksuiteoapi/node-sdk";
 
 /**
@@ -171,12 +172,12 @@ export const listDocumentBlocks = defineTool({
             path: {
               document_id: args.document_id,
             },
-            params: {
-              page_size: args.page_size ?? 500,
-              ...(args.page_token && { page_token: args.page_token }),
-              document_revision_id: args.document_revision_id ?? -1,
+            params: cleanParams({
+              page_size: args.page_size,
+              page_token: args.page_token,
+              document_revision_id: args.document_revision_id,
               user_id_type: args.user_id_type,
-            },
+            }),
           },
           authOption
         );
@@ -199,7 +200,7 @@ export const listDocumentBlocks = defineTool({
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify(response) || `API error: ${response.code}`,
+                text: response.msg || `API error: ${response.code}`,
               },
             ],
             isError: true,
@@ -225,11 +226,11 @@ export const listDocumentBlocks = defineTool({
           path: {
             document_id: args.document_id,
           },
-          params: {
-            page_size: args.page_size ?? 500,
-            document_revision_id: args.document_revision_id ?? -1,
+          params: cleanParams({
+            page_size: args.page_size,
+            document_revision_id: args.document_revision_id,
             user_id_type: args.user_id_type,
-          },
+          }),
         },
         authOption
       )) {

@@ -88,11 +88,7 @@ describe("listDocumentBlocks", () => {
       expect(mockClient.docx.v1.documentBlock.listWithIterator).toHaveBeenCalledWith(
         {
           path: { document_id: "doc123" },
-          params: {
-            page_size: 500,
-            document_revision_id: -1,
-            user_id_type: undefined,
-          },
+          params: {},
         },
         { userId: 123 }
       );
@@ -132,8 +128,6 @@ describe("listDocumentBlocks", () => {
           path: { document_id: "doc123" },
           params: {
             page_size: 100,
-            document_revision_id: -1,
-            user_id_type: undefined,
           },
         },
         { userId: 123 }
@@ -202,8 +196,6 @@ describe("listDocumentBlocks", () => {
           params: {
             page_size: 50,
             page_token: "current_page_token",
-            document_revision_id: -1,
-            user_id_type: undefined,
           },
         },
         { userId: 123 }
@@ -238,7 +230,7 @@ describe("listDocumentBlocks", () => {
         content: [
           {
             type: "text",
-            text: JSON.stringify(mockErrorResponse),
+            text: "not found",
           },
         ],
         isError: true,
@@ -380,7 +372,6 @@ describe("listDocumentBlocks", () => {
         {
           path: { document_id: "doc123" },
           params: {
-            page_size: 500, // 默认值
             document_revision_id: 5,
             user_id_type: "union_id",
           },
