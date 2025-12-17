@@ -182,6 +182,19 @@ export const listDocumentBlocks = defineTool({
         );
 
         if (response.code !== 0) {
+          // 处理频率限制错误
+          if (response.code === 99991400) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${response.code}\n错误信息: ${response.msg || '请求过于频繁'}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+
           return {
             content: [
               {
@@ -235,7 +248,22 @@ export const listDocumentBlocks = defineTool({
         structuredContent: result,
       };
     } catch (error) {
+      // 检查是否是频率限制错误
       const message = error instanceof Error ? error.message : String(error);
+
+      // 检查错误信息中是否包含频率限制错误码
+      if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,

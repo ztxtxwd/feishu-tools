@@ -305,6 +305,55 @@ describe("listDocumentBlocks", () => {
         isError: true,
       });
     });
+
+    it("should handle rate limit error in manual pagination mode", async () => {
+      const mockResponse = {
+        code: 99991400,
+        msg: "请求过于频繁",
+        data: null,
+      };
+
+      (resolveToken as any).mockResolvedValue("user_access_token");
+      lark.withUserAccessToken.mockReturnValue({ userId: 123 });
+      mockClient.docx.v1.documentBlock.list.mockResolvedValue(mockResponse);
+
+      const result = await listDocumentBlocks.callback(mockContext, {
+        document_id: "doc123",
+        page_token: "token123",
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: "text",
+            text: "应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。\n错误码: 99991400\n错误信息: 请求过于频繁",
+          },
+        ],
+        isError: true,
+      });
+    });
+
+    it("should handle rate limit error in iterator mode", async () => {
+      (resolveToken as any).mockResolvedValue("user_access_token");
+      lark.withUserAccessToken.mockReturnValue({ userId: 123 });
+      mockClient.docx.v1.documentBlock.listWithIterator.mockRejectedValue(
+        new Error("API error: 99991400 - Rate limit exceeded")
+      );
+
+      const result = await listDocumentBlocks.callback(mockContext, {
+        document_id: "doc123",
+      });
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: "text",
+            text: "应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。\n错误信息: API error: 99991400 - Rate limit exceeded",
+          },
+        ],
+        isError: true,
+      });
+    });
   });
 
   describe("parameter handling", () => {
