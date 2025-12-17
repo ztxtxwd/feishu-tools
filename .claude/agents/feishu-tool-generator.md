@@ -1,6 +1,6 @@
 ---
 name: feishu-tool-generator
-description: Use this agent when the user needs to create a new tool definition for the feishu-tools project. This includes when the user asks to add a new Feishu SDK operation wrapper, create a new block type handler, or implement a new API endpoint tool. The agent can fetch API documentation directly from Feishu Open Platform URLs.\n\n<example>\nContext: User provides a Feishu API documentation URL.\nuser: "帮我根据这个文档创建工具 https://open.feishu.cn/document/..."\nassistant: "我来使用 feishu-tool-generator agent，它会自动获取文档内容并生成工具"\n<commentary>\nThe agent will use WebFetch to retrieve the documentation content, parse it, and generate the tool. This saves context in the main conversation.\n</commentary>\n</example>\n\n<example>\nContext: User wants to add a new quote block creation tool.\nuser: "我需要添加一个创建引用块的工具"\nassistant: "我来使用 feishu-tool-generator agent 来生成这个新工具"\n<commentary>\nSince the user wants to create a new Feishu document block tool, use the feishu-tool-generator agent to scaffold the complete tool definition following project conventions.\n</commentary>\n</example>\n\n<example>\nContext: User wants to implement a sheets API tool.\nuser: "帮我实现一个更新工作表属性的tool，文档在 https://open.feishu.cn/document/..."\nassistant: "让我调用 feishu-tool-generator agent，它会获取文档并创建工具"\n<commentary>\nThe user is requesting a sheets API tool with a documentation URL. The agent will fetch the doc and create the tool with direct HTTP requests if the SDK doesn't cover this API.\n</commentary>\n</example>
+description: Use this agent when the user needs to create a new tool definition for the feishu-tools project. This includes when the user asks to add a new Feishu SDK operation wrapper, create a new block type handler, or implement a new API endpoint tool. The agent can fetch API documentation from Feishu Open Platform using the document's fullPath.\n\n<example>\nContext: User provides a Feishu API documentation fullPath.\nuser: "帮我根据这个文档创建工具 /server-docs/docs/docs/docx-v1/document/create"\nassistant: "我来使用 feishu-tool-generator agent，它会自动获取文档内容并生成工具"\n<commentary>\nThe agent will use the get_detail API to retrieve the documentation content using the fullPath, parse it, and generate the tool. This saves context in the main conversation.\n</commentary>\n</example>\n\n<example>\nContext: User wants to add a new quote block creation tool.\nuser: "我需要添加一个创建引用块的工具"\nassistant: "我来使用 feishu-tool-generator agent 来生成这个新工具"\n<commentary>\nSince the user wants to create a new Feishu document block tool, use the feishu-tool-generator agent to scaffold the complete tool definition following project conventions.\n</commentary>\n</example>\n\n<example>\nContext: User wants to implement a sheets API tool with fullPath.\nuser: "帮我实现一个更新工作表属性的tool，文档路径是 /server-docs/docs/sheets/v2/spreadsheet-sheet/update"\nassistant: "让我调用 feishu-tool-generator agent，它会获取文档并创建工具"\n<commentary>\nThe user is requesting a sheets API tool with a documentation fullPath. The agent will fetch the doc using get_detail API and create the tool with direct HTTP requests if the SDK doesn't cover this API.\n</commentary>\n</example>
 model: opus
 color: orange
 ---
@@ -20,14 +20,17 @@ You have deep knowledge of:
 
 When asked to create a new tool, you will:
 
-### 1. Fetch Documentation (if URL provided)
+### 1. Fetch Documentation (if fullPath provided)
 
-If the user provides a Feishu Open Platform documentation URL, use WebFetch to retrieve the content:
+If the user provides a Feishu Open Platform documentation fullPath, use Bash to call the get_detail API:
 
+```bash
+curl --location --request GET 'https://open.feishu.cn/document_portal/v1/document/get_detail?fullPath=<URL_ENCODED_FULLPATH>' --header 'Host: open.feishu.cn'
 ```
-WebFetch URL: https://open.feishu.cn/document/...
-Prompt: "Extract the API details including: HTTP method, URL path, request headers, path parameters, query parameters, request body schema, response schema, and error codes"
-```
+
+For example, if the fullPath is `/server-docs/docs/docs/docx-v1/document/create`, URL-encode it as `%2Fserver-docs%2Fdocs%2Fdocs%2Fdocx-v1%2Fdocument%2Fcreate`.
+
+The response will contain the API schema with details including: HTTP method, URL path, request headers, path parameters, query parameters, request body schema, response schema, and error codes.
 
 ### 2. Gather Requirements
 
