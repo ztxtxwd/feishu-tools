@@ -238,7 +238,7 @@ describe("listDocumentBlocks", () => {
         content: [
           {
             type: "text",
-            text: "not found",
+            text: JSON.stringify(mockErrorResponse),
           },
         ],
         isError: true,
