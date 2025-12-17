@@ -109,22 +109,26 @@ describe("listDocumentBlocks", () => {
     });
 
     it("should use custom page_size when provided", async () => {
-      const mockIterator = {
-        [Symbol.asyncIterator]: async function* () {
-          yield { block_id: "block1" };
+      const mockResponse = {
+        code: 0,
+        msg: "success",
+        data: {
+          items: [{ block_id: "block1" }],
+          page_token: "next_page_token",
+          has_more: true,
         },
       };
 
       (resolveToken as any).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      mockClient.docx.v1.documentBlock.listWithIterator.mockResolvedValue(mockIterator);
+      mockClient.docx.v1.documentBlock.list.mockResolvedValue(mockResponse);
 
-      await listDocumentBlocks.callback(mockContext, {
+      const result = await listDocumentBlocks.callback(mockContext, {
         document_id: "doc123",
         page_size: 100,
       });
 
-      expect(mockClient.docx.v1.documentBlock.listWithIterator).toHaveBeenCalledWith(
+      expect(mockClient.docx.v1.documentBlock.list).toHaveBeenCalledWith(
         {
           path: { document_id: "doc123" },
           params: {
@@ -135,6 +139,16 @@ describe("listDocumentBlocks", () => {
         },
         { userId: 123 }
       );
+
+      expect(result).toEqual({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(mockResponse.data, null, 2),
+          },
+        ],
+        structuredContent: mockResponse.data,
+      });
     });
 
     it("should use tenant access token when user token is not available", async () => {
@@ -305,9 +319,9 @@ describe("listDocumentBlocks", () => {
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
       mockClient.docx.v1.documentBlock.listWithIterator.mockResolvedValue(mockIterator);
 
+      // 不提供 page_size 和 page_token，使用迭代器模式
       await listDocumentBlocks.callback(mockContext, {
         document_id: "doc123",
-        page_size: 200,
         document_revision_id: 5,
         user_id_type: "union_id",
       });
@@ -316,7 +330,7 @@ describe("listDocumentBlocks", () => {
         {
           path: { document_id: "doc123" },
           params: {
-            page_size: 200,
+            page_size: 500, // 默认值
             document_revision_id: 5,
             user_id_type: "union_id",
           },

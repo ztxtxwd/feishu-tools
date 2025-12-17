@@ -124,12 +124,12 @@ export const listDocumentBlocks = defineTool({
       .min(1)
       .max(500)
       .optional()
-      .describe("分页大小，默认 500。仅在 page_token 存在时生效"),
+      .describe("分页大小，默认 500。填写时将进入分页模式"),
     page_token: z
       .string()
       .optional()
       .describe(
-        "分页标记。如果不填，将使用迭代器自动获取所有块；如果填写，则返回单页结果和下一页的 page_token"
+        "分页标记。与 page_size 均不填时使用迭代器自动获取所有块；填写其中任意一个则进入分页模式"
       ),
     document_revision_id: z
       .number()
@@ -164,16 +164,16 @@ export const listDocumentBlocks = defineTool({
         ? lark.withUserAccessToken(userAccessToken)
         : undefined;
 
-      // 如果提供了 page_token，使用手动分页模式
-      if (args.page_token !== undefined) {
+      // 如果提供了 page_token 或 page_size，使用手动分页模式
+      if (args.page_token !== undefined || args.page_size !== undefined) {
         const response = await context.client.docx.v1.documentBlock.list(
           {
             path: {
               document_id: args.document_id,
             },
             params: {
-              page_size: args.page_size,
-              page_token: args.page_token,
+              page_size: args.page_size ?? 500,
+              ...(args.page_token && { page_token: args.page_token }),
               document_revision_id: args.document_revision_id ?? -1,
               user_id_type: args.user_id_type,
             },
