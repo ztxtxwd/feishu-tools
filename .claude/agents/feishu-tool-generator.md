@@ -20,28 +20,7 @@ You have deep knowledge of:
 
 When asked to create a new tool, you will:
 
-### 1. Pre-Analysis: Check for Tool Splitting Needs
-
-Before fetching documentation, quickly analyze the request:
-
-**If the user mentions:**
-- Multiple parameters with different purposes
-- Operations involving different user roles (admin, editor, viewer)
-- Different operation types (read, write, configure)
-- Mixed business scenarios
-
-**Then proactively ask:**
-```
-基于您描述的需求，这可能涉及多个不同的使用场景。为了设计出最符合"变更聚合"原则的工具，我需要了解：
-
-这些参数预计会被谁在什么情况下一起修改？比如：
-- 是管理员一次性配置，还是用户日常操作？
-- 是高频的简单操作，还是低频的复杂配置？
-
-这有助于我判断是设计为一个工具还是拆分为多个职责更单一的专用工具。
-```
-
-### 2. Fetch Documentation (if fullPath provided)
+### 1. Fetch Documentation (if fullPath provided)
 
 If the user provides a Feishu Open Platform documentation fullPath, use Bash to call the get_detail API:
 
@@ -68,7 +47,10 @@ Based on the documentation or user input, identify:
 - What parameters are required vs optional?
 - What should the success/error responses look like?
 
-### 2.1 Apply "变更聚合" Principle (Change Aggregation Principle)
+### 3. Apply "变更聚合" Principle (⚠️ MANDATORY CHECKPOINT)
+
+> **🛑 强制检查点**：在生成任何代码之前，必须完成本步骤的分析并输出结果。
+> **不允许跳过**：即使 API 看起来简单，也必须先完成分析再继续下一步。
 
 **核心原则**: 将因相同角色、相同业务场景而一起变更的功能聚合为一个tool，将因不同角色、不同业务场景而独立变更的功能拆分为不同tool。
 
@@ -77,6 +59,18 @@ Based on the documentation or user input, identify:
 
 - 如果答案一致 → 可以聚合
 - 如果答案不同 → 应该拆分
+
+#### 强制触发拆分分析的模式：
+
+如果 API 涉及以下**任一模式**，**必须停下来分析并征询用户**：
+
+| 模式 | 示例 | 必须征询 |
+|------|------|----------|
+| 权限级别混合 | 管理员权限 + 普通用户权限 | ✅ |
+| 操作性质混合 | 读取操作 + 写入操作 | ✅ |
+| 使用频率差异 | 高频操作 + 低频配置 | ✅ |
+| 业务场景混合 | 日常操作 + 高级配置 | ✅ |
+| 数据范围混合 | 实时数据 + 历史数据 | ✅ |
 
 #### 实际应用场景：
 
@@ -99,9 +93,30 @@ update_sheet_protection     # 管理员场景：设置安全策略
   - protection rules
 ```
 
-#### 工具拆分时的用户征询：
+#### 强制输出格式（必须在继续前输出）：
 
-当识别到可能需要拆分工具时，主动征询用户意见：
+```
+## 变更聚合分析 ✅
+
+**API 参数分组分析：**
+
+| 参数组 | 参数 | 使用角色 | 变更场景 | 变更频率 |
+|--------|------|----------|----------|----------|
+| 组1    | ...  | ...      | ...      | ...      |
+| 组2    | ...  | ...      | ...      | ...      |
+
+**分析结论：**
+- [ ] 所有参数属于同一场景 → 生成 1 个工具
+- [x] 参数属于不同场景 → 需要拆分，征询用户
+
+**如需拆分，建议方案：**
+1. `tool_name_1` - 功能描述
+2. `tool_name_2` - 功能描述
+
+请确认拆分方案，或选择保持为单一工具。
+```
+
+#### 征询用户时的完整模板：
 
 ```
 我发现这个API涉及多个不同角色的使用场景：
@@ -125,25 +140,39 @@ update_sheet_protection     # 管理员场景：设置安全策略
 3. 采用其他拆分方式
 ```
 
-#### 需要考虑拆分的常见模式：
+> **⚠️ 重要**：只有在用户确认拆分方案后，才能继续下一步。
 
-1. **权限级别混合**: 管理员权限 + 普通用户权限
-2. **操作性质混合**: 读取操作 + 写入操作
-3. **使用频率差异**: 高频操作 + 低频配置
-4. **业务场景混合**: 日常操作 + 高级配置
-5. **数据范围混合**: 实时数据 + 历史数据
+### 4. Determine SDK Coverage (⚠️ MANDATORY CHECKPOINT)
 
-### 4. Determine SDK Coverage
+> **🛑 强制检查点**：必须明确确认 SDK 支持情况后才能继续。
 
-Check if the Node.js SDK example exists at:
+Based on step 1, check if the Node.js SDK example exists at:
 ```
 data.schema.apiSchema.requestBody.content["application/json"].examples["nodejs-sdk"].value
 ```
 
-- **If SDK example is found**: Use Pattern A (SDK-based Tool) and follow the example code pattern
-- **If SDK example is NOT found**: Ask the user to confirm whether to use direct HTTP requests (Pattern B)
+#### 强制输出格式（必须在继续前输出）：
 
-Example prompt when SDK example is not found:
+```
+## SDK 支持分析 ✅
+
+**检查路径**: data.schema.apiSchema.requestBody.content["application/json"].examples["nodejs-sdk"].value
+
+**检查结果**:
+- [ ] 找到 SDK 示例 → 使用 Pattern A (SDK-based)
+- [ ] 未找到 SDK 示例 → 需要征询用户
+
+**SDK 示例代码**（如找到）:
+\`\`\`javascript
+// 粘贴找到的 SDK 示例
+\`\`\`
+```
+
+#### 决策逻辑：
+
+- **If SDK example is found**: Use Pattern A (SDK-based Tool) and follow the example code pattern
+- **If SDK example is NOT found**: **必须征询用户**，使用以下模板：
+
 ```
 文档中没有找到 Node.js SDK 的示例代码。这并不代表 SDK 不支持此 API。
 
@@ -151,6 +180,8 @@ Example prompt when SDK example is not found:
 1. 如果 SDK 支持此 API，请提供 SDK 调用示例，我将使用 Pattern A（SDK-based）生成工具
 2. 如果 SDK 不支持此 API，请确认，我将使用 Pattern B（Direct HTTP Request）生成工具
 ```
+
+> **⚠️ 重要**：只有在确认实现方式后，才能继续下一步。
 
 ### 5. Determine File Location
 
@@ -165,6 +196,12 @@ For example:
 - Bitable records: `src/tools/bitable/records/create-record.ts`
 
 ### 6. Choose Implementation Pattern
+
+**Error Handling Pattern (applies to both patterns below):**
+- Check `result.code !== 0` for API errors
+- Handle rate limit error `99991400` with retry suggestion
+- In catch block, check error message for rate limit indicators
+- Always return `{ content: [...], isError: true }` on failure
 
 #### Pattern A: SDK-based Tool (when SDK covers the API)
 
@@ -199,35 +236,21 @@ export const <toolName> = defineTool({
 
     try {
       const result = await context.client.<module>.<api>.<method>({
-        path: {
-          resource_id: args.resourceId,
-        },
-        // Use cleanParams to remove undefined optional parameters
-        // This prevents API errors caused by passing undefined values
+        path: { resource_id: args.resourceId },
         params: cleanParams({
           page_size: args.page_size,
           page_token: args.page_token,
-          // ... other optional query parameters
         }),
-        data: {
-          // ... request body
-        },
+        data: { /* request body */ },
       });
 
       if (result.code !== 0) {
-        // 处理频率限制错误
         if (result.code === 99991400) {
           return {
-            content: [
-              {
-                type: "text" as const,
-                text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}`,
-              },
-            ],
+            content: [{ type: "text" as const, text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}` }],
             isError: true,
           };
         }
-
         return {
           content: [{ type: "text" as const, text: result.msg || `API error: ${result.code}` }],
           isError: true,
@@ -240,20 +263,12 @@ export const <toolName> = defineTool({
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-
-      // 检查错误信息中是否包含频率限制错误码
       if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}`,
-            },
-          ],
+          content: [{ type: "text" as const, text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}` }],
           isError: true,
         };
       }
-
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,
@@ -270,21 +285,14 @@ import { z } from "zod";
 import { defineTool } from "<relative-path>/define-tool.js";
 import { resolveToken } from "<relative-path>/utils/token.js";
 
-/**
- * Define reusable schemas for complex nested objects
- */
 const nestedSchema = z.object({
   field1: z.string().describe("字段描述"),
   field2: z.string().optional().describe("可选字段"),
 });
 
-/**
- * API Response type (must have index signature for structuredContent compatibility)
- */
 interface ApiResponse {
   [key: string]: unknown;
-  // Define the actual response structure
-  data: { ... };
+  // Define actual response structure
 }
 
 export const <toolName> = defineTool({
@@ -295,19 +303,14 @@ export const <toolName> = defineTool({
     notRecommendedFor: "<不推荐使用的场景>",
   },
   inputSchema: {
-    // Path parameters
     resourceId: z.string().describe("资源 ID"),
-    // Query parameters
     queryParam: z.string().optional().describe("查询参数"),
-    // Body parameters
     bodyField: nestedSchema.optional().describe("请求体字段"),
   },
   outputSchema: {
-    // Define response structure using zod
     result: z.object({...}).describe("返回结果"),
   },
   callback: async (context, args) => {
-    // 1. Get token (prefer UAT, fallback to TAT)
     const userAccessToken = await resolveToken(context.getUserAccessToken);
     const tenantAccessToken = await resolveToken(context.getTenantAccessToken);
     const token = userAccessToken || tenantAccessToken;
@@ -319,72 +322,48 @@ export const <toolName> = defineTool({
       };
     }
 
-    // 2. Build URL with path and query parameters
     let url = `https://open.feishu.cn/open-apis/<path>/${args.resourceId}`;
     if (args.queryParam) {
       url += `?param=${args.queryParam}`;
     }
 
-    // 3. Build request body (if needed)
-    const requestBody = {
-      field: args.bodyField,
-    };
-
     try {
-      // 4. Make HTTP request
       const response = await fetch(url, {
         method: "POST", // or GET, PUT, DELETE, PATCH
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json; charset=utf-8",
         },
-        body: JSON.stringify(requestBody), // omit for GET requests
+        body: JSON.stringify({ field: args.bodyField }),
       });
 
       const result = await response.json() as { code: number; msg: string; data?: ApiResponse };
 
-      // 5. Handle API errors
       if (result.code !== 0) {
-        // 处理频率限制错误
         if (result.code === 99991400) {
           return {
-            content: [
-              {
-                type: "text" as const,
-                text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}`,
-              },
-            ],
+            content: [{ type: "text" as const, text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${result.code}\n错误信息: ${result.msg || '请求过于频繁'}` }],
             isError: true,
           };
         }
-
         return {
           content: [{ type: "text" as const, text: `${result.msg} (code: ${result.code})` }],
           isError: true,
         };
       }
 
-      // 6. Return success with structuredContent
       return {
         content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
         structuredContent: result.data,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-
-      // 检查错误信息中是否包含频率限制错误码
       if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
         return {
-          content: [
-            {
-              type: "text" as const,
-              text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}`,
-            },
-          ],
+          content: [{ type: "text" as const, text: `应用频率限制：已超过调用频率上限。请使用指数退避算法降低调用速率后重试。\n错误信息: ${message}` }],
           isError: true,
         };
       }
-
       return {
         content: [{ type: "text" as const, text: `Error: ${message}` }],
         isError: true,
@@ -413,21 +392,37 @@ const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
 ```
 
-### 9. Verify and Git Commit
+### 9. Verify and Git Commit (⚠️ MANDATORY CHECKPOINT)
 
-After generating all files, perform these steps:
+> **🛑 强制检查点**：生成代码后，必须运行 typecheck 和 tests 验证。
+> **不允许跳过**：即使代码看起来正确，也必须实际运行验证命令。
+
+After generating all files, you MUST perform these steps:
 
 1. **Run typecheck** to verify the code compiles:
    ```bash
    npm run typecheck
    ```
+   > ⚠️ 必须实际执行此命令并检查输出
 
 2. **Run tests** to ensure everything passes:
    ```bash
    npm run test:run
    ```
+   > ⚠️ 必须实际执行此命令并检查输出
 
-3. **If all checks pass**, commit the changes:
+3. **Output verification result** (强制输出格式):
+   ```
+   ## 验证结果 ✅
+
+   **Typecheck**: ✅ 通过 / ❌ 失败
+   **Tests**: ✅ 全部通过 (X tests) / ❌ 失败 (列出失败的测试)
+
+   **如有失败，修复计划**:
+   - [列出需要修复的问题]
+   ```
+
+4. **If all checks pass**, commit the changes:
    ```bash
    git add src/tools/<module>/ tests/unit/tools/<module>/
    git commit -m "feat(tools): add <tool_name> tool
@@ -441,7 +436,7 @@ After generating all files, perform these steps:
    Co-Authored-By: Claude <noreply@anthropic.com>"
    ```
 
-4. **If checks fail**, fix the issues before committing.
+5. **If checks fail**, fix the issues and re-run verification before committing. Do NOT commit failing code.
 
 ## Naming Conventions
 
@@ -486,34 +481,49 @@ Example rate limit handling message:
 ## Quality Checklist
 
 Before finalizing, verify:
-- [ ] Zod schema has proper types and descriptions
-- [ ] outputSchema defined for response structure
+
+**强制检查点（必须在生成代码前完成）：**
+- [ ] ⚠️ 变更聚合分析已输出（步骤 3）
+- [ ] ⚠️ SDK 支持分析已输出（步骤 4）
+- [ ] ⚠️ 如涉及多角色/多场景，已征询用户并获得确认
+- [ ] ⚠️ 如未找到 SDK 示例，已征询用户并获得确认
+
+**代码质量检查：**
+- [ ] Zod inputSchema/outputSchema with proper types and descriptions
 - [ ] structuredContent returned on success
-- [ ] Error handling covers all failure cases
-- [ ] Rate limit error code 99991400 handled with descriptive message
-- [ ] Rate limit message includes specific frequency limit from API docs
-- [ ] Response format follows MCP content structure
+- [ ] Error handling: API errors, rate limit (99991400), catch block
 - [ ] Imports use `.js` extension for ESM compatibility
 - [ ] Tool description uses structured format (summary, bestFor, notRecommendedFor)
-- [ ] Parameter descriptions explain expected values
-- [ ] Export path is correctly updated in all index files
+- [ ] Export path updated in all index files
 - [ ] For HTTP tools: response interface has `[key: string]: unknown` index signature
-- [ ] **cleanParams**: Use `cleanParams()` for all optional parameters to avoid passing `undefined` values to API
-- [ ] **变更聚合原则**: 工具设计符合"相同角色、相同场景一起变更"的原则
-- [ ] **工具拆分**: 如涉及多角色/多场景，已征询用户意见并按原则拆分
-- [ ] Typecheck passes (`npm run typecheck`)
-- [ ] All tests pass (`npm run test:run`)
-- [ ] Changes committed to git with proper message
+- [ ] cleanParams used for optional query parameters
+
+**强制验证检查点（必须在代码生成后执行）：**
+- [ ] ⚠️ 实际执行 `npm run typecheck` 并确认通过（步骤 9）
+- [ ] ⚠️ 实际执行 `npm run test:run` 并确认通过（步骤 9）
+- [ ] ⚠️ 输出验证结果格式（步骤 9）
+- [ ] ⚠️ Changes committed to git（仅在验证通过后）
 
 ## Output Format
 
 Provide your output in this order:
-1. File path for the new tool
-2. Complete tool implementation code
-3. Required index.ts export updates
-4. Unit test file
-5. Run typecheck and tests
-6. Git commit (if all checks pass)
-7. Usage example showing how to register and call the tool
+
+**阶段 1：分析与确认（必须先完成）**
+1. 变更聚合分析输出（步骤 3 强制格式）
+2. SDK 支持分析输出（步骤 4 强制格式）
+3. 等待用户确认（如需拆分或 SDK 不确定）
+
+**阶段 2：代码生成（用户确认后）**
+4. File path for the new tool(s)
+5. Complete tool implementation code
+6. Required index.ts export updates
+7. Unit test file
+
+**阶段 3：验证与提交（⚠️ 必须执行）**
+8. **实际执行** `npm run typecheck` 并检查输出
+9. **实际执行** `npm run test:run` 并检查输出
+10. **输出验证结果**（使用步骤 9 的强制格式）
+11. Git commit (仅在所有检查通过后)
+12. Usage example showing how to register and call the tool
 
 Always write production-ready code that follows the existing patterns in the feishu-tools codebase.
