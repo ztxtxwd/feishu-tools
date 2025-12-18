@@ -171,6 +171,7 @@ For example:
 ```typescript
 import { z } from "zod";
 import { defineTool } from "<relative-path>/define-tool.js";
+import { cleanParams } from "<relative-path>/utils/clean-params.js";
 
 export const <toolName> = defineTool({
   name: "<snake_case_name>",
@@ -198,7 +199,19 @@ export const <toolName> = defineTool({
 
     try {
       const result = await context.client.<module>.<api>.<method>({
-        // Map args to SDK parameters
+        path: {
+          resource_id: args.resourceId,
+        },
+        // Use cleanParams to remove undefined optional parameters
+        // This prevents API errors caused by passing undefined values
+        params: cleanParams({
+          page_size: args.page_size,
+          page_token: args.page_token,
+          // ... other optional query parameters
+        }),
+        data: {
+          // ... request body
+        },
       });
 
       if (result.code !== 0) {
@@ -485,6 +498,7 @@ Before finalizing, verify:
 - [ ] Parameter descriptions explain expected values
 - [ ] Export path is correctly updated in all index files
 - [ ] For HTTP tools: response interface has `[key: string]: unknown` index signature
+- [ ] **cleanParams**: Use `cleanParams()` for all optional parameters to avoid passing `undefined` values to API
 - [ ] **变更聚合原则**: 工具设计符合"相同角色、相同场景一起变更"的原则
 - [ ] **工具拆分**: 如涉及多角色/多场景，已征询用户意见并按原则拆分
 - [ ] Typecheck passes (`npm run typecheck`)
