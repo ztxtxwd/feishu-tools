@@ -77,7 +77,7 @@ const fileCommentSchema = z.object({
 export const listFileComments = defineTool({
   name: "list_file_comments",
   description: {
-    summary: "获取云文档所有评论信息，包括评论和回复 ID、回复的内容、评论人和回复人的用户 ID 等。支持返回全局评论以及局部评论。",
+    summary: "获取云文档所有评论信息，包括评论和回复 ID、回复的内容、评论人和回复人的用户 ID 等。支持返回全局评论以及局部评论。默认使用迭代器自动获取所有评论，也可手动分页。",
     bestFor: "查看云文档的所有评论、筛选已解决或未解决的评论、获取评论内容和回复",
     notRecommendedFor: "创建评论请使用其他接口",
   },
@@ -86,14 +86,14 @@ export const listFileComments = defineTool({
     file_type: z.enum(["doc", "docx", "sheet", "file", "slides"]).describe("云文档类型：doc（旧版文档，不推荐）、docx（新版文档）、sheet（电子表格）、file（文件）、slides（幻灯片）"),
     is_whole: z.boolean().optional().describe("是否全文评论"),
     is_solved: z.boolean().optional().describe("是否已解决"),
-    page_token: z.string().optional().describe("分页标记，第一次请求不填，表示从头开始遍历"),
-    page_size: z.number().int().min(1).max(100).optional().describe("分页大小，默认 50，最大 100"),
+    page_token: z.string().optional().describe("分页标记。与 page_size 均不填时使用迭代器自动获取所有评论；填写其中任意一个则进入分页模式"),
+    page_size: z.number().int().min(1).max(100).optional().describe("分页大小，默认 50，最大 100。填写时将进入分页模式"),
     user_id_type: z.enum(["open_id", "union_id", "user_id"]).optional().describe("用户 ID 类型，默认为 open_id"),
   },
   outputSchema: {
-    has_more: z.boolean().optional().describe("是否还有更多项"),
-    page_token: z.string().optional().describe("分页标记"),
-    items: z.array(fileCommentSchema).optional().describe("评论列表"),
+    items: z.array(fileCommentSchema).describe("评论列表"),
+    has_more: z.boolean().optional().describe("是否还有更多项，仅在手动分页时返回"),
+    page_token: z.string().optional().describe("分页标记，仅在手动分页时返回"),
   },
   callback: async (context, args) => {
     if (!context.client) {
@@ -107,8 +107,66 @@ export const listFileComments = defineTool({
 
     try {
       const userAccessToken = await resolveToken(context.getUserAccessToken);
+      const authOption = userAccessToken
+        ? lark.withUserAccessToken(userAccessToken)
+        : undefined;
 
-      const response = await context.client.drive.v1.fileComment.list(
+      // 如果提供了 page_token 或 page_size，使用手动分页模式
+      if (args.page_token !== undefined || args.page_size !== undefined) {
+        const response = await context.client.drive.v1.fileComment.list(
+          {
+            path: {
+              file_token: args.file_token,
+            },
+            params: {
+              file_type: args.file_type,
+              ...cleanParams({
+                is_whole: args.is_whole,
+                is_solved: args.is_solved,
+                page_token: args.page_token,
+                page_size: args.page_size,
+                user_id_type: args.user_id_type,
+              }),
+            },
+          },
+          authOption
+        );
+
+        if (response.code !== 0) {
+          if (response.code === 99991400) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `应用频率限制：已超过调用频率上限（1000 次/分钟、50 次/秒）。请使用指数退避算法降低调用速率后重试。\n错误码: ${response.code}\n错误信息: ${response.msg || "请求过于频繁"}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: response.msg || `API error: ${response.code}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        return {
+          content: [
+            { type: "text" as const, text: JSON.stringify(response.data, null, 2) },
+          ],
+          structuredContent: response.data,
+        };
+      }
+
+      // 否则使用迭代器模式自动获取所有评论
+      const allComments: unknown[] = [];
+
+      for await (const page of await context.client.drive.v1.fileComment.listWithIterator(
         {
           path: {
             file_token: args.file_token,
@@ -118,43 +176,28 @@ export const listFileComments = defineTool({
             ...cleanParams({
               is_whole: args.is_whole,
               is_solved: args.is_solved,
-              page_token: args.page_token,
-              page_size: args.page_size,
               user_id_type: args.user_id_type,
             }),
           },
         },
-        userAccessToken ? lark.withUserAccessToken(userAccessToken) : undefined
-      );
-
-      if (response.code !== 0) {
-        if (response.code === 99991400) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `应用频率限制：已超过调用频率上限（1000 次/分钟、50 次/秒）。请使用指数退避算法降低调用速率后重试。\n错误码: ${response.code}\n错误信息: ${response.msg || "请求过于频繁"}`,
-              },
-            ],
-            isError: true,
-          };
+        authOption
+      )) {
+        // 迭代器每次 yield 分页响应对象 { items?: [...] }，需要提取 items 数组
+        if (page?.items) {
+          allComments.push(...page.items);
         }
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: response.msg || `API error: ${response.code}`,
-            },
-          ],
-          isError: true,
-        };
       }
+
+      const result = { items: allComments };
 
       return {
         content: [
-          { type: "text" as const, text: JSON.stringify(response.data, null, 2) },
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
         ],
-        structuredContent: response.data,
+        structuredContent: result,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

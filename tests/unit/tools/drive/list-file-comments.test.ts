@@ -4,11 +4,13 @@ import { listFileComments } from "../../../../src/tools/drive/list-file-comments
 describe("listFileComments", () => {
   // Mock client
   const mockList = vi.fn();
+  const mockListWithIterator = vi.fn();
   const mockClient = {
     drive: {
       v1: {
         fileComment: {
           list: mockList,
+          listWithIterator: mockListWithIterator,
         },
       },
     },
@@ -48,7 +50,57 @@ describe("listFileComments", () => {
   });
 
   describe("successful calls", () => {
-    it("should call SDK with correct parameters", async () => {
+    it("should use iterator mode when no pagination params provided", async () => {
+      const mockComments = [
+        {
+          comment_id: "123",
+          user_id: "ou_xxx",
+          is_solved: false,
+          is_whole: true,
+        },
+        {
+          comment_id: "456",
+          user_id: "ou_yyy",
+          is_solved: true,
+          is_whole: false,
+        },
+      ];
+
+      // Mock async iterator
+      mockListWithIterator.mockResolvedValue({
+        async *[Symbol.asyncIterator]() {
+          yield { items: [mockComments[0]] };
+          yield { items: [mockComments[1]] };
+        },
+      });
+
+      const result = await listFileComments.callback(
+        { client: mockClient },
+        {
+          file_token: "test_token",
+          file_type: "docx",
+          is_whole: false,
+          is_solved: false,
+        }
+      );
+
+      expect(result.isError).toBeUndefined();
+      expect(mockListWithIterator).toHaveBeenCalledWith(
+        {
+          path: { file_token: "test_token" },
+          params: {
+            file_type: "docx",
+            is_whole: false,
+            is_solved: false,
+          },
+        },
+        undefined
+      );
+      expect(mockList).not.toHaveBeenCalled();
+      expect(result.structuredContent).toEqual({ items: mockComments });
+    });
+
+    it("should use manual pagination when page_size is provided", async () => {
       const mockData = {
         has_more: false,
         items: [
@@ -102,28 +154,11 @@ describe("listFileComments", () => {
         },
         undefined
       );
+      expect(mockListWithIterator).not.toHaveBeenCalled();
       expect(result.structuredContent).toEqual(mockData);
     });
 
-    it("should not include undefined optional params (cleanParams)", async () => {
-      mockList.mockResolvedValue({ code: 0, data: { items: [] } });
-
-      await listFileComments.callback(
-        { client: mockClient },
-        { file_token: "test_token", file_type: "docx" }
-      );
-
-      // Verify cleanParams removes undefined values
-      const callArgs = mockList.mock.calls[0][0];
-      expect(callArgs.params).toEqual({ file_type: "docx" });
-      expect(callArgs.params).not.toHaveProperty("is_whole");
-      expect(callArgs.params).not.toHaveProperty("is_solved");
-      expect(callArgs.params).not.toHaveProperty("page_token");
-      expect(callArgs.params).not.toHaveProperty("page_size");
-      expect(callArgs.params).not.toHaveProperty("user_id_type");
-    });
-
-    it("should handle pagination parameters", async () => {
+    it("should use manual pagination when page_token is provided", async () => {
       mockList.mockResolvedValue({
         code: 0,
         data: {
@@ -139,7 +174,6 @@ describe("listFileComments", () => {
           file_token: "test_token",
           file_type: "sheet",
           page_token: "current_page_token",
-          page_size: 50,
         }
       );
 
@@ -148,16 +182,16 @@ describe("listFileComments", () => {
         expect.objectContaining({
           params: expect.objectContaining({
             page_token: "current_page_token",
-            page_size: 50,
           }),
         }),
         undefined
       );
+      expect(mockListWithIterator).not.toHaveBeenCalled();
     });
   });
 
   describe("error handling", () => {
-    it("should handle API error", async () => {
+    it("should handle API error in manual pagination mode", async () => {
       mockList.mockResolvedValue({
         code: 1069302,
         msg: "param error",
@@ -165,14 +199,14 @@ describe("listFileComments", () => {
 
       const result = await listFileComments.callback(
         { client: mockClient },
-        { file_token: "test_token", file_type: "docx" }
+        { file_token: "test_token", file_type: "docx", page_size: 10 }
       );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("param error");
     });
 
-    it("should handle rate limit error (99991400)", async () => {
+    it("should handle rate limit error (99991400) in manual pagination mode", async () => {
       mockList.mockResolvedValue({
         code: 99991400,
         msg: "rate limit exceeded",
@@ -180,14 +214,14 @@ describe("listFileComments", () => {
 
       const result = await listFileComments.callback(
         { client: mockClient },
-        { file_token: "test_token", file_type: "docx" }
+        { file_token: "test_token", file_type: "docx", page_size: 10 }
       );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("频率限制");
     });
 
-    it("should handle forbidden error (1069303)", async () => {
+    it("should handle forbidden error (1069303) in manual pagination mode", async () => {
       mockList.mockResolvedValue({
         code: 1069303,
         msg: "forbidden",
@@ -195,15 +229,15 @@ describe("listFileComments", () => {
 
       const result = await listFileComments.callback(
         { client: mockClient },
-        { file_token: "test_token", file_type: "docx" }
+        { file_token: "test_token", file_type: "docx", page_size: 10 }
       );
 
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain("forbidden");
     });
 
-    it("should handle exception", async () => {
-      mockList.mockRejectedValue(new Error("Network error"));
+    it("should handle exception in iterator mode", async () => {
+      mockListWithIterator.mockRejectedValue(new Error("Network error"));
 
       const result = await listFileComments.callback(
         { client: mockClient },
@@ -215,7 +249,7 @@ describe("listFileComments", () => {
     });
 
     it("should handle rate limit in exception message", async () => {
-      mockList.mockRejectedValue(new Error("99991400: rate limit exceeded"));
+      mockListWithIterator.mockRejectedValue(new Error("99991400: rate limit exceeded"));
 
       const result = await listFileComments.callback(
         { client: mockClient },
