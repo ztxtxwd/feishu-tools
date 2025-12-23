@@ -7,13 +7,12 @@ import * as lark from "@larksuiteoapi/node-sdk";
  * Block Schema
  */
 const blockSchema = z
-  .object({
+  .looseObject({
     block_id: z.string().describe("Block 唯一标识（临时 ID）"),
     parent_id: z.string().optional().describe("Block 的父块 ID"),
     children: z.array(z.string()).optional().describe("Block 的子块 ID 列表"),
     block_type: z.number().int().describe("Block 类型"),
   })
-  .passthrough()
   .describe("Block 信息");
 
 /**
