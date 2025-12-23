@@ -45,7 +45,7 @@ const calloutBlockInputSchema = {
     .string()
     .optional()
     .describe(
-      "高亮块左侧的 emoji 图标 ID（snake_case 格式）。常用值: bulb(灯泡), star(星星), fire(火焰), rocket(火箭), white_check_mark(勾选), exclamation(感叹号), warning(警告), memo(备忘), book(书本), pencil2(铅笔), thumbsup(点赞), heart(心)"
+      "高亮块左侧的 emoji 图标 ID（snake_case 格式）。可使用 search_feishu_callout_emoji 工具搜索合适的 emoji ID。"
     ),
   background_color: backgroundColorSchema.optional(),
   border_color: borderColorSchema.optional(),
