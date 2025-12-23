@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  buildTextBlock,
-  buildSimpleTextBlock,
-} from "../../../../../src/tools/docx/blocks/build-text-block.js";
+import { buildTextBlock } from "../../../../../src/tools/docx/blocks/build-text-block.js";
 
 describe("buildTextBlock", () => {
   describe("tool definition", () => {
@@ -296,118 +293,6 @@ describe("buildTextBlock", () => {
         },
       });
       expect(result.structuredContent.text).not.toHaveProperty("style");
-    });
-  });
-});
-
-describe("buildSimpleTextBlock", () => {
-  describe("tool definition", () => {
-    it("should have correct name", () => {
-      expect(buildSimpleTextBlock.name).toBe("build_simple_text_block");
-    });
-
-    it("should have readOnlyHint annotation", () => {
-      expect(buildSimpleTextBlock.annotations?.readOnlyHint).toBe(true);
-    });
-
-    it("should have description", () => {
-      expect(buildSimpleTextBlock.description).toBeDefined();
-    });
-  });
-
-  describe("callback", () => {
-    const context = {};
-
-    it("should build a simple text block from content string", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "Hello World",
-      });
-
-      expect(result.isError).toBeUndefined();
-      expect(result.structuredContent).toEqual({
-        block_type: 2,
-        text: {
-          elements: [{ text_run: { content: "Hello World" } }],
-        },
-      });
-    });
-
-    it("should build text block with style", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "Centered text",
-        style: { align: 2 },
-      });
-
-      expect(result.structuredContent).toEqual({
-        block_type: 2,
-        text: {
-          elements: [{ text_run: { content: "Centered text" } }],
-          style: { align: 2 },
-        },
-      });
-    });
-
-    it("should handle empty content", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "",
-      });
-
-      expect(result.structuredContent).toEqual({
-        block_type: 2,
-        text: {
-          elements: [{ text_run: { content: "" } }],
-        },
-      });
-    });
-
-    it("should handle content with newlines", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "Line 1\nLine 2",
-      });
-
-      expect(result.structuredContent).toEqual({
-        block_type: 2,
-        text: {
-          elements: [{ text_run: { content: "Line 1\nLine 2" } }],
-        },
-      });
-    });
-
-    it("should support all style options", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "Styled",
-        style: {
-          align: 1,
-          folded: false,
-          background_color: "LightYellowBackground",
-          indentation_level: "NoIndent",
-        },
-      });
-
-      expect(result.structuredContent).toEqual({
-        block_type: 2,
-        text: {
-          elements: [{ text_run: { content: "Styled" } }],
-          style: {
-            align: 1,
-            folded: false,
-            background_color: "LightYellowBackground",
-            indentation_level: "NoIndent",
-          },
-        },
-      });
-    });
-
-    it("should return JSON string in content", async () => {
-      const result = await buildSimpleTextBlock.callback(context, {
-        content: "test",
-      });
-
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0].type).toBe("text");
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.block_type).toBe(2);
-      expect(parsed.text.elements[0].text_run.content).toBe("test");
     });
   });
 });

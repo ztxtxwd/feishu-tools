@@ -24,8 +24,8 @@ const __dirname = path.dirname(__filename);
 
 // 解析命令行参数
 const args = process.argv.slice(2);
-const INPUT_FILE_ARG = args[0] || path.join(__dirname, '创建块.md');
-const OUTPUT_DIR_ARG = args[1] || path.join(__dirname, 'docs/blocks');
+const INPUT_FILE_ARG = args[0] || path.join(__dirname, '../docs/blocks/创建块.md');
+const OUTPUT_DIR_ARG = args[1] || path.join(__dirname, '../docs/blocks');
 
 // 块类型映射表（根据文档内容）
 const BLOCK_TYPES = {
@@ -105,25 +105,23 @@ console.log(`开始读取文档...\n`);
 const content = fs.readFileSync(INPUT_FILE, 'utf-8');
 const lines = content.split('\n');
 
-// 提取公共部分（从文档开始到请求体之前）
-let headerEndIndex = -1;
+// 查找请求体部分
+let requestStartIndex = -1;
 for (let i = 0; i < lines.length; i++) {
   if (lines[i].trim() === '### 请求体') {
-    headerEndIndex = i;
+    requestStartIndex = i;
     break;
   }
 }
 
-if (headerEndIndex === -1) {
+if (requestStartIndex === -1) {
   console.error('未找到请求体部分');
   process.exit(1);
 }
 
-const commonHeader = lines.slice(0, headerEndIndex + 1).join('\n');
-
 // 查找请求体children字段的开始位置
 let childrenStartIndex = -1;
-for (let i = headerEndIndex; i < lines.length; i++) {
+for (let i = requestStartIndex; i < lines.length; i++) {
   if (lines[i].includes('children | block') || lines[i].includes('children |')) {
     childrenStartIndex = i + 1;
     break;
@@ -135,15 +133,12 @@ if (childrenStartIndex === -1) {
   process.exit(1);
 }
 
-// 查找响应体的开始位置
+// 查找响应体的开始位置（请求体结束）
 let responseStartIndex = -1;
 for (let i = childrenStartIndex; i < lines.length; i++) {
-  if (lines[i].trim().startsWith('## 响应') || lines[i].trim().startsWith('###')) {
-    // 找到第一个### 或 ## 响应，说明请求体结束
-    if (lines[i].includes('响应')) {
-      responseStartIndex = i;
-      break;
-    }
+  if (lines[i].trim().startsWith('## 响应')) {
+    responseStartIndex = i;
+    break;
   }
 }
 
@@ -152,7 +147,7 @@ if (responseStartIndex === -1) {
   process.exit(1);
 }
 
-console.log(`公共头部: 0-${headerEndIndex}`);
+console.log(`请求体开始: ${requestStartIndex}`);
 console.log(`children字段开始: ${childrenStartIndex}`);
 console.log(`响应部分开始: ${responseStartIndex}`);
 
@@ -194,26 +189,21 @@ for (let idx = 0; idx < blockTypeLines.length; idx++) {
   console.log(`\n提取 ${blockTypeName}: 行 ${startLine}-${endLine} (${endLine - startLine} 行)`);
 }
 
-// 提取响应体部分
-const responseContent = lines.slice(responseStartIndex).join('\n');
-
-// 为每种块类型生成单独的文档
+// 为每种块类型生成单独的文档（仅请求体）
 console.log('\n开始生成块类型文档...\n');
 
 Object.entries(blockFieldsMap).forEach(([blockTypeName, fields]) => {
   const blockTypeNum = Object.entries(BLOCK_TYPES).find(([_, name]) => name === blockTypeName)?.[0];
 
-  // 生成文档内容
-  const docContent = `# 创建${blockTypeName}块
+  // 生成文档内容（仅请求体）
+  const docContent = `# 创建${blockTypeName}块 (block_type: ${blockTypeNum || 'N/A'})
 
-${commonHeader}
+### 请求体
 
 名称 | 类型 | 必填 | 描述
 ---|---|---|---
 children | block[] | 否 | 添加的子块列表
 ${fields}
-
-${responseContent}
 `;
 
   // 写入文件
