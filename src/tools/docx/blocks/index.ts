@@ -36,6 +36,9 @@ export { buildCodeBlock } from "./build-code-block.js";
 // Divider Block
 export { buildDividerBlock } from "./build-divider-block.js";
 
+// Callout Block
+export { buildCalloutBlock } from "./build-callout-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
