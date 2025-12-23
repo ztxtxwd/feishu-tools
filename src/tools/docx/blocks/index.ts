@@ -1,7 +1,49 @@
 export { batchDeleteBlocks } from "./batch-delete-blocks.js";
 export { listDocumentBlocks } from "./list-blocks.js";
-export { buildTextBlock, buildSimpleTextBlock } from "./build-text-block.js";
+
+// Text Block
+export { buildTextBlock } from "./build-text-block.js";
+
+// Heading Blocks
+export {
+  buildHeading1Block,
+  buildHeading2Block,
+  buildHeading3Block,
+  buildHeading4Block,
+  buildHeading5Block,
+  buildHeading6Block,
+  buildHeading7Block,
+  buildHeading8Block,
+  buildHeading9Block,
+} from "./build-heading-blocks.js";
+
+// List Blocks
+export { buildBulletBlock } from "./build-bullet-block.js";
+export { buildOrderedBlock } from "./build-ordered-block.js";
+
+// Quote Block
+export { buildQuoteBlock } from "./build-quote-block.js";
+
+// Equation Block
+export { buildEquationBlock } from "./build-equation-block.js";
+
+// Todo Block
+export { buildTodoBlock } from "./build-todo-block.js";
+
+// Code Block
+export { buildCodeBlock } from "./build-code-block.js";
+
+// Divider Block
 export { buildDividerBlock } from "./build-divider-block.js";
 
-// 导出 schemas
+// 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
+
+// 导出工厂函数（供扩展使用）
+export {
+  createTextBlockTool,
+  type TextBlockConfig,
+} from "./factories/index.js";
+
+// 导出新 schemas（使用命名空间避免冲突）
+export * as textElementSchemas from "./schemas/index.js";
