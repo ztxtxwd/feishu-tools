@@ -40,6 +40,9 @@ export { buildDividerBlock } from "./build-divider-block.js";
 export { buildCalloutBlock } from "./build-callout-block.js";
 export { searchFeishuCalloutEmoji } from "./search-feishu-callout-emoji.js";
 
+// File Block
+export { createFileBlock } from "./create-file-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
