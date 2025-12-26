@@ -3,7 +3,6 @@ import { createImageBlock } from "../../../../../src/tools/docx/blocks/create-im
 import * as lark from "@larksuiteoapi/node-sdk";
 import { resolveToken } from "../../../../../src/utils/token.js";
 import * as fs from "fs";
-import * as path from "path";
 
 // Mock the lark SDK
 vi.mock("@larksuiteoapi/node-sdk", () => ({
@@ -20,6 +19,14 @@ vi.mock("fs", () => ({
   existsSync: vi.fn(),
   readFileSync: vi.fn(),
 }));
+
+// Type for testing invalid inputs
+type PartialInput = Partial<
+  Parameters<typeof createImageBlock.callback>[1]
+> & {
+  document_id: string;
+  block_id: string;
+};
 
 describe("createImageBlock", () => {
   const mockClient = {
@@ -108,10 +115,10 @@ describe("createImageBlock", () => {
         code: 0,
       };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -144,10 +151,10 @@ describe("createImageBlock", () => {
 
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -173,10 +180,10 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_abc" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -218,10 +225,10 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_abc" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -267,7 +274,7 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_xyz" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
@@ -311,7 +318,7 @@ describe("createImageBlock", () => {
       const result = await createImageBlock.callback(mockContext, {
         document_id: "doc123",
         block_id: "block_456",
-      } as any);
+      } as PartialInput);
 
       expect(result).toEqual({
         content: [
@@ -330,7 +337,7 @@ describe("createImageBlock", () => {
         block_id: "block_456",
         image_path: "/path/to/image.png",
         image_content: "base64data",
-      } as any);
+      } as PartialInput);
 
       expect(result).toEqual({
         content: [
@@ -344,7 +351,7 @@ describe("createImageBlock", () => {
     });
 
     it("should return error when image_path file does not exist", async () => {
-      (fs.existsSync as any).mockReturnValue(false);
+      vi.mocked(fs.existsSync).mockReturnValue(false);
 
       const result = await createImageBlock.callback(mockContext, {
         document_id: "doc123",
@@ -368,7 +375,7 @@ describe("createImageBlock", () => {
         document_id: "doc123",
         block_id: "block_456",
         image_content: "base64data",
-      } as any);
+      } as PartialInput);
 
       expect(result).toEqual({
         content: [
@@ -383,10 +390,10 @@ describe("createImageBlock", () => {
 
     it("should return error when file size exceeds 20MB limit", async () => {
       const largeBuffer = Buffer.alloc(21 * 1024 * 1024); // 21MB
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(largeBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(largeBuffer);
 
       const result = await createImageBlock.callback(mockContext, {
         document_id: "doc123",
@@ -404,10 +411,10 @@ describe("createImageBlock", () => {
         msg: "not found",
       };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
 
       const result = await createImageBlock.callback(mockContext, {
@@ -435,10 +442,10 @@ describe("createImageBlock", () => {
         },
       };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
 
       const result = await createImageBlock.callback(mockContext, {
@@ -459,10 +466,10 @@ describe("createImageBlock", () => {
         },
       };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(null);
 
@@ -487,10 +494,10 @@ describe("createImageBlock", () => {
       const mockUploadResponse = {};
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -519,10 +526,10 @@ describe("createImageBlock", () => {
         msg: "permission denied",
       };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -545,10 +552,10 @@ describe("createImageBlock", () => {
     });
 
     it("should handle SDK exceptions", async () => {
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockRejectedValue(
         new Error("Network error")
       );
@@ -571,10 +578,10 @@ describe("createImageBlock", () => {
     });
 
     it("should handle string errors", async () => {
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockRejectedValue("String error");
 
       const result = await createImageBlock.callback(mockContext, {
@@ -604,9 +611,9 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_abc" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue(undefined);
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(resolveToken).mockResolvedValue(undefined);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -635,10 +642,10 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_abc" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);
@@ -676,10 +683,10 @@ describe("createImageBlock", () => {
       const mockUploadResponse = { file_token: "img_token_abc" };
       const mockPatchResponse = { code: 0 };
 
-      (resolveToken as any).mockResolvedValue("user_access_token");
+      vi.mocked(resolveToken).mockResolvedValue("user_access_token");
       lark.withUserAccessToken.mockReturnValue({ userId: 123 });
-      (fs.existsSync as any).mockReturnValue(true);
-      (fs.readFileSync as any).mockReturnValue(mockImageBuffer);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readFileSync).mockReturnValue(mockImageBuffer);
       mockClient.docx.v1.documentBlockChildren.create.mockResolvedValue(mockCreateResponse);
       mockClient.drive.v1.media.uploadAll.mockResolvedValue(mockUploadResponse);
       mockClient.docx.v1.documentBlock.patch.mockResolvedValue(mockPatchResponse);

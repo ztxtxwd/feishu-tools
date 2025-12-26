@@ -25,6 +25,14 @@ vi.mock("path", () => ({
   basename: vi.fn((p: string) => p.split("/").pop() || p),
 }));
 
+// Type for testing invalid inputs
+type PartialInput = Partial<
+  Parameters<typeof createFileBlock.callback>[1]
+> & {
+  document_id: string;
+  block_id: string;
+};
+
 describe("createFileBlock", () => {
   const mockClient = {
     docx: {
@@ -331,10 +339,13 @@ describe("createFileBlock", () => {
     });
 
     it("should return error when neither file_path nor file_content is provided", async () => {
-      const result = await createFileBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block456",
-      } as any);
+      const result = await createFileBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block456",
+        } as PartialInput
+      );
 
       expect(result).toEqual({
         content: [
@@ -348,12 +359,15 @@ describe("createFileBlock", () => {
     });
 
     it("should return error when both file_path and file_content are provided", async () => {
-      const result = await createFileBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block456",
-        file_path: "/path/to/file.pdf",
-        file_content: "base64content",
-      } as any);
+      const result = await createFileBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block456",
+          file_path: "/path/to/file.pdf",
+          file_content: "base64content",
+        } as PartialInput
+      );
 
       expect(result).toEqual({
         content: [
@@ -387,11 +401,14 @@ describe("createFileBlock", () => {
     });
 
     it("should return error when file_content is used without file_name", async () => {
-      const result = await createFileBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block456",
-        file_content: "base64content",
-      } as any);
+      const result = await createFileBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block456",
+          file_content: "base64content",
+        } as PartialInput
+      );
 
       expect(result).toEqual({
         content: [
