@@ -73,13 +73,11 @@ export const createFileBlock = defineTool({
     view_type: z
       .enum(["card", "preview"])
       .optional()
-      .default("card")
       .describe("文件显示方式：card=卡片视图（默认），preview=预览视图"),
     document_revision_id: z
       .number()
       .int()
       .optional()
-      .default(-1)
       .describe("文档版本，-1 表示最新版本"),
   },
   outputSchema: {
