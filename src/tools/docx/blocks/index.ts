@@ -46,6 +46,9 @@ export { createFileBlock } from "./create-file-block.js";
 // Image Block
 export { createImageBlock } from "./create-image-block.js";
 
+// Iframe Block
+export { buildIframeBlock } from "./build-iframe-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
