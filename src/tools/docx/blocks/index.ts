@@ -1,5 +1,6 @@
 export { batchDeleteBlocks } from "./batch-delete-blocks.js";
 export { listDocumentBlocks } from "./list-blocks.js";
+export { createNestedBlocks } from "./create-nested-blocks.js";
 
 // Text Block
 export { buildTextBlock } from "./build-text-block.js";

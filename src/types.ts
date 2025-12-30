@@ -19,6 +19,8 @@ export interface StructuredToolDescription {
   bestFor?: string;
   /** 不推荐使用该工具的场景 */
   notRecommendedFor?: string;
+  /** 使用指南，提供如何使用工具的详细说明 */
+  usageGuide?: string;
 }
 
 /**
@@ -44,6 +46,10 @@ export function formatDescription(description: ToolDescription): string {
 
   if (description.notRecommendedFor) {
     parts.push(`**不适用于:** ${description.notRecommendedFor}`);
+  }
+
+  if (description.usageGuide) {
+    parts.push(`**使用指南:** ${description.usageGuide}`);
   }
 
   return parts.join("\n\n");
