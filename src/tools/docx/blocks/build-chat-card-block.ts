@@ -2,15 +2,6 @@ import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
 
 /**
- * Align 枚举 Schema
- */
-const alignSchema = z
-  .enum(["1", "2", "3"])
-  .transform((val) => parseInt(val, 10) as 1 | 2 | 3)
-  .or(z.literal(1).or(z.literal(2)).or(z.literal(3)))
-  .describe("对齐方式：1=居左排版，2=居中排版，3=居右排版");
-
-/**
  * ChatCard Block 输出 Schema
  */
 const chatCardBlockOutputSchema = {
