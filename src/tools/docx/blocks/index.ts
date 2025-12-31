@@ -56,6 +56,9 @@ export { buildChatCardBlock } from "./build-chat-card-block.js";
 // Grid Block
 export { buildGridBlock } from "./build-grid-block.js";
 
+// Mermaid Block
+export { buildMermaidBlock } from "./build-mermaid-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
