@@ -59,6 +59,9 @@ export { buildGridBlock } from "./build-grid-block.js";
 // Mermaid Block
 export { buildMermaidBlock } from "./build-mermaid-block.js";
 
+// Glossary Block
+export { buildGlossaryBlock } from "./build-glossary-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
