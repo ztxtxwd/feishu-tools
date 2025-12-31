@@ -29,10 +29,11 @@ describe("buildMermaidBlock", () => {
 
   describe("callback", () => {
     const context = {};
+    const extra = {} as any;
 
     it("should build a mermaid block with default theme", async () => {
       const code = "graph TD\n  A[Start] --> B[End]";
-      const result = await buildMermaidBlock.callback(context, { code });
+      const result = await buildMermaidBlock.callback(context, { code } as any, extra);
 
       expect(result.isError).toBeUndefined();
       expect(result.structuredContent).toEqual({
@@ -54,7 +55,7 @@ describe("buildMermaidBlock", () => {
       const result = await buildMermaidBlock.callback(context, {
         code,
         theme: "dark",
-      });
+      }, extra);
 
       expect(result.isError).toBeUndefined();
       const record = JSON.parse(result.structuredContent.add_ons.record);
@@ -73,7 +74,7 @@ describe("buildMermaidBlock", () => {
         const result = await buildMermaidBlock.callback(context, {
           code: "graph TD\n  A --> B",
           theme,
-        });
+        } as any, extra);
 
         const record = JSON.parse(result.structuredContent.add_ons.record);
         expect(record.theme).toBe(theme);
@@ -83,7 +84,7 @@ describe("buildMermaidBlock", () => {
     it("should return correct block_type (40)", async () => {
       const result = await buildMermaidBlock.callback(context, {
         code: "graph TD\n  A --> B",
-      });
+      } as any, extra);
 
       expect(result.structuredContent.block_type).toBe(40);
     });
@@ -91,7 +92,7 @@ describe("buildMermaidBlock", () => {
     it("should have correct component_type_id", async () => {
       const result = await buildMermaidBlock.callback(context, {
         code: "graph TD\n  A --> B",
-      });
+      } as any, extra);
 
       expect(result.structuredContent.add_ons.component_type_id).toBe(
         "blk_631fefbbae02400430b8f9f4"
@@ -101,7 +102,7 @@ describe("buildMermaidBlock", () => {
     it("should have empty component_id", async () => {
       const result = await buildMermaidBlock.callback(context, {
         code: "graph TD\n  A --> B",
-      });
+      } as any, extra);
 
       expect(result.structuredContent.add_ons.component_id).toBe("");
     });
@@ -109,7 +110,7 @@ describe("buildMermaidBlock", () => {
     it("should include view as codeChart in record", async () => {
       const result = await buildMermaidBlock.callback(context, {
         code: "graph TD\n  A --> B",
-      });
+      } as any, extra);
 
       const record = JSON.parse(result.structuredContent.add_ons.record);
       expect(record.view).toBe("codeChart");
@@ -117,18 +118,20 @@ describe("buildMermaidBlock", () => {
 
     it("should return JSON string in content", async () => {
       const code = "graph TD\n  A --> B";
-      const result = await buildMermaidBlock.callback(context, { code });
+      const result = await buildMermaidBlock.callback(context, { code } as any, extra);
 
       expect(result.content).toHaveLength(1);
-      expect(result.content[0].type).toBe("text");
-      const parsed = JSON.parse(result.content[0].text);
-      expect(parsed.block_type).toBe(40);
-      expect(parsed.add_ons).toBeDefined();
+      const content = result.content[0];
+      if (content.type === "text") {
+        const parsed = JSON.parse(content.text);
+        expect(parsed.block_type).toBe(40);
+        expect(parsed.add_ons).toBeDefined();
+      }
     });
 
     it("should return structuredContent", async () => {
       const code = "sequenceDiagram\n  A->>B: Hello";
-      const result = await buildMermaidBlock.callback(context, { code });
+      const result = await buildMermaidBlock.callback(context, { code } as any, extra);
 
       expect(result.structuredContent).toBeDefined();
       expect(result.structuredContent.block_type).toBe(40);
@@ -149,7 +152,7 @@ describe("buildMermaidBlock", () => {
 
       const result = await buildMermaidBlock.callback(context, {
         code: complexCode,
-      });
+      } as any, extra);
 
       const record = JSON.parse(result.structuredContent.add_ons.record);
       expect(record.data).toBe(complexCode);
@@ -166,7 +169,7 @@ describe("buildMermaidBlock", () => {
       const result = await buildMermaidBlock.callback(context, {
         code: specialCode,
         theme: "forest",
-      });
+      }, extra);
 
       const record = JSON.parse(result.structuredContent.add_ons.record);
       expect(record.data).toBe(specialCode);
