@@ -14,7 +14,7 @@ import {
   IndentationLevel,
   CodeLanguage,
   BLOCK_TYPE_MAP,
-} from "../../../../../dist/tools/docx/blocks/schemas.js";
+} from "../../../../../src/tools/docx/blocks/schemas.js";
 
 describe("Block Style Schemas", () => {
   describe("baseBlockStyleSchema", () => {
