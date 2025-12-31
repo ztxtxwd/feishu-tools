@@ -65,6 +65,9 @@ export { buildGlossaryBlock } from "./build-glossary-block.js";
 // Timeline Block
 export { buildTimelineBlock } from "./build-timeline-block.js";
 
+// Catalog Navigation Block
+export { buildCatalogNavigationBlock } from "./build-catalog-navigation-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
