@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { buildCountdownBlock } from "../../../../../src/tools/docx/blocks/build-countdown-block.js";
 
 describe("buildCountdownBlock", () => {
@@ -13,7 +13,6 @@ describe("buildCountdownBlock", () => {
 
     it("should have description", () => {
       expect(buildCountdownBlock.description).toBeDefined();
-      // description is formatted as string by formatDescription
       expect(typeof buildCountdownBlock.description).toBe("string");
       expect(buildCountdownBlock.description).toContain("倒计时");
     });
@@ -31,231 +30,359 @@ describe("buildCountdownBlock", () => {
     const context = {};
     const extra = {} as any;
 
-    it("should build a countdown block with default color", async () => {
-      const startTime = 1704067200000; // 2024-01-01 00:00:00 UTC
-      const duration = 604800000; // 7 days in milliseconds
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
+    // 固定时间以便测试（使用本地时间）
+    const mockNow = new Date(2025, 0, 1, 10, 0, 0, 0); // 2025-01-01 10:00:00 本地时间
+    const mockTimestamp = mockNow.getTime();
 
-      expect(result.isError).toBeUndefined();
-      expect(result.structuredContent).toEqual({
-        block_type: 40,
-        add_ons: {
-          component_id: "",
-          component_type_id: "blk_6358a421bca0001c1ce10709",
-          record: JSON.stringify({
-            color: "BLUE",
-            duration,
-            startTime,
-          }),
-        },
-      });
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(mockNow);
     });
 
-    it("should build a countdown block with custom color", async () => {
-      const startTime = 1704067200000;
-      const duration = 86400000; // 1 day
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime,
-          duration,
-          color: "RED",
-        },
-        extra,
-      );
-
-      expect(result.isError).toBeUndefined();
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.color).toBe("RED");
+    afterEach(() => {
+      vi.useRealTimers();
     });
 
-    it("should support all color options", async () => {
-      const colors: Array<"BLUE" | "GREEN" | "RED" | "ORANGE" | "PURPLE"> = [
-        "BLUE",
-        "GREEN",
-        "RED",
-        "ORANGE",
-        "PURPLE",
-      ];
-
-      for (const color of colors) {
+    describe("目标日期时间模式 (timingType: 1)", () => {
+      it("should build countdown block with targetDateTime", async () => {
         const result = await buildCountdownBlock.callback(
           context,
-          {
-            startTime: 1704067200000,
-            duration: 86400000,
-            color,
-          } as any,
+          { targetDateTime: "2025-01-08 10:00" } as any,
           extra,
         );
 
-        const record = JSON.parse(result.structuredContent.add_ons.record);
-        expect(record.color).toBe(color);
-      }
+        expect(result.isError).toBeUndefined();
+        expect(result.structuredContent!.block_type).toBe(40);
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.timingType).toBe(1);
+        expect(record.settingData).toEqual({
+          date: "2025-01-08",
+          time: "10:00",
+        });
+        expect(record.duration).toBe(7 * 24 * 60 * 60); // 7 days in seconds
+        expect(record.startTime).toBe(mockTimestamp);
+      });
+
+      it("should return error for invalid targetDateTime format", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { targetDateTime: "2025-01-08" } as any, // 缺少时间部分
+          extra,
+        );
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0]).toMatchObject({
+          type: "text",
+          text: expect.stringContaining("格式错误"),
+        });
+      });
+
+      it("should return error for invalid date", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { targetDateTime: "invalid-date 10:00" } as any,
+          extra,
+        );
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0]).toMatchObject({
+          type: "text",
+          text: expect.stringContaining("解析失败"),
+        });
+      });
+
+      it("should handle past targetDateTime (duration = 0)", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { targetDateTime: "2024-01-01 00:00" } as any, // 过去的时间
+          extra,
+        );
+
+        expect(result.isError).toBeUndefined();
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.duration).toBe(0);
+      });
     });
 
-    it("should return correct block_type (40)", async () => {
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime: 1704067200000,
-          duration: 86400000,
-        } as any,
-        extra,
-      );
+    describe("持续时间模式 (timingType: 0)", () => {
+      it("should build countdown block with days", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 7 } as any,
+          extra,
+        );
 
-      expect(result.structuredContent.block_type).toBe(40);
+        expect(result.isError).toBeUndefined();
+        expect(result.structuredContent!.block_type).toBe(40);
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.timingType).toBe(0);
+        expect(record.duration).toBe(7 * 24 * 60 * 60); // 7 days in seconds
+        expect(record.settingData.d).toBe("7");
+        expect(record.settingData.h).toBe("0");
+        expect(record.settingData.m).toBe("0");
+        expect(record.settingData.s).toBe("0");
+      });
+
+      it("should build countdown block with hours, minutes, seconds", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { hours: 2, minutes: 30, seconds: 45 } as any,
+          extra,
+        );
+
+        expect(result.isError).toBeUndefined();
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.timingType).toBe(0);
+        expect(record.duration).toBe(2 * 3600 + 30 * 60 + 45);
+        expect(record.settingData.d).toBe("0");
+        expect(record.settingData.h).toBe("2");
+        expect(record.settingData.m).toBe("30");
+        expect(record.settingData.s).toBe("45");
+      });
+
+      it("should build countdown block with all time components", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, hours: 2, minutes: 30, seconds: 45 } as any,
+          extra,
+        );
+
+        expect(result.isError).toBeUndefined();
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.duration).toBe(1 * 86400 + 2 * 3600 + 30 * 60 + 45);
+      });
+
+      it("should return error when no duration specified", async () => {
+        const result = await buildCountdownBlock.callback(context, {} as any, extra);
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0]).toMatchObject({
+          type: "text",
+          text: expect.stringContaining("请指定"),
+        });
+      });
+
+      it("should return error when all durations are 0", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 0, hours: 0, minutes: 0, seconds: 0 } as any,
+          extra,
+        );
+
+        expect(result.isError).toBe(true);
+      });
+
+      it("should include current date/time in settingData", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.settingData.date).toBe("2025-01-01");
+        expect(record.settingData.time).toBe("10:00");
+      });
     });
 
-    it("should have correct component_type_id", async () => {
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime: 1704067200000,
-          duration: 86400000,
-        } as any,
-        extra,
-      );
+    describe("颜色配置", () => {
+      it("should use default color (ORANGE) when not specified", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      expect(result.structuredContent.add_ons.component_type_id).toBe(
-        "blk_6358a421bca0001c1ce10709",
-      );
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#FF8800");
+      });
+
+      it("should support color name BLUE", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "BLUE" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#3370FF");
+      });
+
+      it("should support color name GREEN", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "GREEN" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#34C724");
+      });
+
+      it("should support color name RED", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "RED" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#F54A45");
+      });
+
+      it("should support color name PURPLE", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "PURPLE" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#7B67EE");
+      });
+
+      it("should support lowercase color names", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "blue" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#3370FF");
+      });
+
+      it("should support hex color directly", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "#123456" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#123456");
+      });
+
+      it("should normalize hex color to uppercase", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "#abcdef" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#ABCDEF");
+      });
+
+      it("should fallback to ORANGE for unknown color name", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, color: "UNKNOWN" } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.color).toBe("#FF8800");
+      });
     });
 
-    it("should have empty component_id", async () => {
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime: 1704067200000,
-          duration: 86400000,
-        } as any,
-        extra,
-      );
+    describe("通知配置", () => {
+      it("should default notify to true", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      expect(result.structuredContent.add_ons.component_id).toBe("");
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.isNotify).toBe(true);
+      });
+
+      it("should support notify: false", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, notify: false } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.isNotify).toBe(false);
+      });
+
+      it("should support notify: true explicitly", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1, notify: true } as any,
+          extra,
+        );
+
+        const record = JSON.parse(result.structuredContent!.add_ons.record);
+        expect(record.isNotify).toBe(true);
+      });
     });
 
-    it("should include correct startTime in record", async () => {
-      const startTime = 1735689600000; // 2025-01-01 00:00:00 UTC
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime,
-          duration: 86400000,
-        } as any,
-        extra,
-      );
+    describe("输出格式", () => {
+      it("should return correct block_type (40)", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.startTime).toBe(startTime);
-    });
+        expect(result.structuredContent!.block_type).toBe(40);
+      });
 
-    it("should include correct duration in record", async () => {
-      const duration = 2592000000; // 30 days
-      const result = await buildCountdownBlock.callback(
-        context,
-        {
-          startTime: 1704067200000,
-          duration,
-        } as any,
-        extra,
-      );
+      it("should have correct component_type_id", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.duration).toBe(duration);
-    });
+        expect(result.structuredContent!.add_ons.component_type_id).toBe(
+          "blk_6358a421bca0001c1ce10709",
+        );
+      });
 
-    it("should return JSON string in content", async () => {
-      const startTime = 1704067200000;
-      const duration = 86400000;
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
+      it("should have empty component_id", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      expect(result.content).toHaveLength(1);
-      const content = result.content[0];
-      if (content.type === "text") {
-        const parsed = JSON.parse(content.text);
-        expect(parsed.block_type).toBe(40);
-        expect(parsed.add_ons).toBeDefined();
-      }
-    });
+        expect(result.structuredContent!.add_ons.component_id).toBe("");
+      });
 
-    it("should return structuredContent", async () => {
-      const startTime = 1704067200000;
-      const duration = 86400000;
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
+      it("should return JSON string in content", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      expect(result.structuredContent).toBeDefined();
-      expect(result.structuredContent.block_type).toBe(40);
-      expect(result.structuredContent.add_ons).toBeDefined();
-    });
+        expect(result.content).toHaveLength(1);
+        const content = result.content[0];
+        if (content.type === "text") {
+          const parsed = JSON.parse(content.text);
+          expect(parsed.block_type).toBe(40);
+          expect(parsed.add_ons).toBeDefined();
+        }
+      });
 
-    it("should handle very short duration", async () => {
-      const startTime = 1704067200000;
-      const duration = 1000; // 1 second
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
+      it("should return structuredContent", async () => {
+        const result = await buildCountdownBlock.callback(
+          context,
+          { days: 1 } as any,
+          extra,
+        );
 
-      expect(result.isError).toBeUndefined();
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.duration).toBe(1000);
-    });
-
-    it("should handle very long duration", async () => {
-      const startTime = 1704067200000;
-      const duration = 31536000000; // 365 days
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
-
-      expect(result.isError).toBeUndefined();
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.duration).toBe(duration);
-    });
-
-    it("should handle current timestamp as startTime", async () => {
-      const startTime = Date.now();
-      const duration = 86400000; // 1 day
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
-
-      expect(result.isError).toBeUndefined();
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.startTime).toBe(startTime);
-    });
-
-    it("should calculate correct end time", async () => {
-      const startTime = 1704067200000; // 2024-01-01 00:00:00 UTC
-      const duration = 604800000; // 7 days
-      const expectedEndTime = startTime + duration; // 2024-01-08 00:00:00 UTC
-
-      const result = await buildCountdownBlock.callback(
-        context,
-        { startTime, duration } as any,
-        extra,
-      );
-
-      const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.startTime + record.duration).toBe(expectedEndTime);
+        expect(result.structuredContent).toBeDefined();
+        expect(result.structuredContent!.block_type).toBe(40);
+        expect(result.structuredContent!.add_ons).toBeDefined();
+      });
     });
   });
 });
