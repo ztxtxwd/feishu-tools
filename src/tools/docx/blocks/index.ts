@@ -62,6 +62,9 @@ export { buildMermaidBlock } from "./build-mermaid-block.js";
 // Glossary Block
 export { buildGlossaryBlock } from "./build-glossary-block.js";
 
+// Timeline Block
+export { buildTimelineBlock } from "./build-timeline-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
