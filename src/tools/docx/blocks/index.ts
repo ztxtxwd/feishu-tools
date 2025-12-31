@@ -71,6 +71,9 @@ export { buildCatalogNavigationBlock } from "./build-catalog-navigation-block.js
 // Information Collection Block
 export { buildInformationCollectionBlock } from "./build-information-collection-block.js";
 
+// Countdown Block
+export { buildCountdownBlock } from "./build-countdown-block.js";
+
 // 导出 schemas（旧版，保持兼容）
 export * from "./schemas.js";
 
