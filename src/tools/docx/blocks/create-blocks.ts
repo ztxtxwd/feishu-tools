@@ -24,8 +24,8 @@ import { defineTool } from "../../../define-tool.js";
  *     { block_id: "col_2", ...columns[1], children: [...] }
  *   ]
  */
-export const createNestedBlocks = defineTool({
-  name: "create_nested_blocks",
+export const createBlocks = defineTool({
+  name: "create_blocks",
   description: {
     summary:
       "在飞书文档中创建块。支持创建单个块（如文本、标题、列表等）或嵌套块结构（如分栏布局、带内容的 Callout、多层列表等）。这是创建任何类型块的统一工具。",
@@ -76,7 +76,7 @@ export const createNestedBlocks = defineTool({
       ),
   },
   annotations: {
-    title: "创建嵌套块",
+    title: "创建块",
   },
   callback: async (context, args) => {
     if (!context.client) {
@@ -126,7 +126,7 @@ export const createNestedBlocks = defineTool({
           content: [
             {
               type: "text" as const,
-              text: `Error: Failed to create nested blocks\nCode: ${result.code}\nMessage: ${result.msg}`,
+              text: `Error: Failed to create blocks\nCode: ${result.code}\nMessage: ${result.msg}`,
             },
           ],
           isError: true,

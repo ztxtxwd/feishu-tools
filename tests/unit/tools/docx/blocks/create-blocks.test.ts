@@ -1,40 +1,40 @@
 import { describe, it, expect, vi } from "vitest";
-import { createNestedBlocks } from "../../../../../src/tools/docx/blocks/create-nested-blocks.js";
+import { createBlocks } from "../../../../../src/tools/docx/blocks/create-blocks.js";
 import { objectFromShape, safeParse } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 
-describe("create_nested_blocks", () => {
+describe("create_blocks", () => {
   describe("Tool Definition", () => {
     it("should have correct name", () => {
-      expect(createNestedBlocks.name).toBe("create_nested_blocks");
+      expect(createBlocks.name).toBe("create_blocks");
     });
 
     it("should have formatted description string", () => {
-      expect(typeof createNestedBlocks.description).toBe("string");
-      expect(createNestedBlocks.description).toContain("在飞书文档中创建块");
-      expect(createNestedBlocks.description).toContain("适用于");
-      expect(createNestedBlocks.description).toContain("不适用于");
-      expect(createNestedBlocks.description).toContain("使用指南");
+      expect(typeof createBlocks.description).toBe("string");
+      expect(createBlocks.description).toContain("在飞书文档中创建块");
+      expect(createBlocks.description).toContain("适用于");
+      expect(createBlocks.description).toContain("不适用于");
+      expect(createBlocks.description).toContain("使用指南");
     });
 
     it("should have annotations", () => {
-      expect(createNestedBlocks.annotations).toHaveProperty("title");
-      expect(createNestedBlocks.annotations?.title).toBe("创建嵌套块");
+      expect(createBlocks.annotations).toHaveProperty("title");
+      expect(createBlocks.annotations?.title).toBe("创建块");
     });
 
     it("should have callback function", () => {
-      expect(createNestedBlocks.callback).toBeTypeOf("function");
+      expect(createBlocks.callback).toBeTypeOf("function");
     });
 
     it("should have inputSchema as an object with field schemas", () => {
-      expect(typeof createNestedBlocks.inputSchema).toBe("object");
-      expect(createNestedBlocks.inputSchema).toHaveProperty("document_id");
-      expect(createNestedBlocks.inputSchema).toHaveProperty("children_id");
-      expect(createNestedBlocks.inputSchema).toHaveProperty("descendants");
+      expect(typeof createBlocks.inputSchema).toBe("object");
+      expect(createBlocks.inputSchema).toHaveProperty("document_id");
+      expect(createBlocks.inputSchema).toHaveProperty("children_id");
+      expect(createBlocks.inputSchema).toHaveProperty("descendants");
     });
   });
 
   describe("Input Schema Validation", () => {
-    const schema = objectFromShape(createNestedBlocks.inputSchema);
+    const schema = objectFromShape(createBlocks.inputSchema);
 
     it("should validate required fields", () => {
       const validInput = {
@@ -178,7 +178,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(1);
@@ -223,7 +223,7 @@ describe("create_nested_blocks", () => {
         ],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBeUndefined();
       expect(result.content).toHaveLength(1);
@@ -290,7 +290,7 @@ describe("create_nested_blocks", () => {
         ],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBeUndefined();
       expect(result.content).toHaveLength(1);
@@ -321,7 +321,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      await createNestedBlocks.callback(context, args, mockExtra);
+      await createBlocks.callback(context, args, mockExtra);
 
       expect(mockClient.docx.v1.documentBlockDescendant.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -355,7 +355,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      await createNestedBlocks.callback(context, args, mockExtra);
+      await createBlocks.callback(context, args, mockExtra);
 
       expect(mockClient.docx.v1.documentBlockDescendant.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -393,7 +393,7 @@ describe("create_nested_blocks", () => {
         client_token: "token_xyz",
       };
 
-      await createNestedBlocks.callback(context, args, mockExtra);
+      await createBlocks.callback(context, args, mockExtra);
 
       expect(mockClient.docx.v1.documentBlockDescendant.create).toHaveBeenCalledWith({
         path: {
@@ -434,13 +434,13 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe("text");
       if (result.content[0].type === "text") {
-        expect(result.content[0].text).toContain("Failed to create nested blocks");
+        expect(result.content[0].text).toContain("Failed to create blocks");
         expect(result.content[0].text).toContain("Code: 400");
         expect(result.content[0].text).toContain("Invalid parameter");
       }
@@ -464,7 +464,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(1);
@@ -492,7 +492,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(1);
@@ -537,7 +537,7 @@ describe("create_nested_blocks", () => {
         descendants: [],
       };
 
-      const result = await createNestedBlocks.callback(context, args, mockExtra);
+      const result = await createBlocks.callback(context, args, mockExtra);
 
       expect(result.isError).toBeUndefined();
       expect(result.content).toHaveLength(1);
