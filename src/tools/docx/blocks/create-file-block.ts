@@ -32,12 +32,12 @@ function adler32(data: Buffer): number {
  * 此工具一次性完成所有步骤
  */
 export const createFileBlock = defineTool({
-  name: "create_file_block",
+  name: "create_file_or_video_block",
   description: {
     summary:
-      "在飞书文档中创建文件块。支持通过本地文件路径或 Base64 编码内容上传文件。",
+      "在飞书文档中创建文件块或视频块。支持通过本地文件路径或 Base64 编码内容上传文件/视频。",
     bestFor:
-      "在文档中插入附件文件、上传本地文件到文档、将文件嵌入文档",
+      "在文档中插入附件文件、上传视频到文档、上传本地文件到文档、将文件或视频嵌入文档",
     notRecommendedFor:
       "上传图片（请使用 create_image_block）、创建不含文件的占位块",
   },
