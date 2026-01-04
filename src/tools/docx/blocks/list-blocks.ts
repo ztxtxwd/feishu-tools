@@ -101,44 +101,23 @@ const blockSchema = z
   .describe("Block 信息");
 
 /**
- * 列出文档所有块
+ * 列出文档所有块或指定块的所有子孙块
  */
 export const listDocumentBlocks = defineTool({
   name: "list_document_blocks",
-  description: {
-    summary:
-      "获取文档所有块的富文本内容。支持获取文档的所有文本、标题、列表、代码块等内容块。默认使用迭代器自动获取所有块，也可手动分页。",
-    bestFor:
-      "读取文档的完整结构和内容、遍历文档所有块、导出文档内容",
-    notRecommendedFor:
-      "只需要文档基本信息时（请使用 get_document）、只需要纯文本内容时（请使用 get_document_raw_content）",
-  },
+  description:
+    "获取文档所有块或指定块的所有子孙块的富文本内容。不提供 block_id 时获取整个文档的所有块，提供 block_id 时获取该块的所有子孙块。",
   inputSchema: {
-    document_id: z
-      .string()
-      .describe(
-        "文档的唯一标识。可通过文档 URL 或获取文件夹下文件清单接口获取"
-      ),
-    page_size: z
-      .number()
-      .int()
-      .min(1)
-      .max(500)
-      .optional()
-      .describe("分页大小，默认 500。填写时将进入分页模式"),
-    page_token: z
+    document_id: z.string().describe("文档的唯一标识"),
+    block_id: z
       .string()
       .optional()
-      .describe(
-        "分页标记。与 page_size 均不填时使用迭代器自动获取所有块；填写其中任意一个则进入分页模式"
-      ),
+      .describe("Block 的唯一标识。不填时获取整个文档的所有块，填写时获取该块的所有子孙块"),
     document_revision_id: z
       .number()
       .int()
       .optional()
-      .describe(
-        "查询的文档版本，-1 表示文档最新版本。文档创建后，版本为 1。若查询历史版本，需要持有文档的编辑权限"
-      ),
+      .describe("查询的文档版本，-1 表示文档最新版本"),
     user_id_type: z
       .enum(["open_id", "union_id", "user_id"])
       .optional()
@@ -146,8 +125,6 @@ export const listDocumentBlocks = defineTool({
   },
   outputSchema: {
     items: z.array(blockSchema).describe("文档的 Block 列表"),
-    page_token: z.string().optional().describe("分页标记，仅在手动分页时返回"),
-    has_more: z.boolean().optional().describe("是否还有更多项，仅在手动分页时返回"),
   },
   callback: async (context, args) => {
     if (!context.client) {
@@ -165,76 +142,23 @@ export const listDocumentBlocks = defineTool({
         ? lark.withUserAccessToken(userAccessToken)
         : undefined;
 
-      // 如果提供了 page_token 或 page_size，使用手动分页模式
-      if (args.page_token !== undefined || args.page_size !== undefined) {
-        const response = await context.client.docx.v1.documentBlock.list(
-          {
-            path: {
-              document_id: args.document_id,
-            },
-            params: cleanParams({
-              page_size: args.page_size,
-              page_token: args.page_token,
-              document_revision_id: args.document_revision_id,
-              user_id_type: args.user_id_type,
-            }),
-          },
-          authOption
-        );
-
-        if (response.code !== 0) {
-          // 处理频率限制错误
-          if (response.code === 99991400) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `应用频率限制：已超过每秒 5 次的调用上限。请使用指数退避算法降低调用速率后重试。\n错误码: ${response.code}\n错误信息: ${response.msg || '请求过于频繁'}`,
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: response.msg || `API error: ${response.code}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(response.data, null, 2),
-            },
-          ],
-          structuredContent: response.data,
-        };
-      }
-
-      // 否则使用迭代器模式自动获取所有块
       const allBlocks: unknown[] = [];
 
-      for await (const page of await context.client.docx.v1.documentBlock.listWithIterator(
+      // 使用 documentBlockChildren.getWithIterator 获取所有块
+      for await (const page of await context.client.docx.v1.documentBlockChildren.getWithIterator(
         {
           path: {
             document_id: args.document_id,
+            block_id: args.block_id ?? args.document_id,
           },
           params: cleanParams({
-            page_size: args.page_size,
             document_revision_id: args.document_revision_id,
             user_id_type: args.user_id_type,
+            with_descendants: true,
           }),
         },
         authOption
       )) {
-        // 迭代器每次 yield 分页响应对象 { items?: [...] }，需要提取 items 数组
         if (page?.items) {
           allBlocks.push(...page.items);
         }
@@ -252,10 +176,8 @@ export const listDocumentBlocks = defineTool({
         structuredContent: result,
       };
     } catch (error) {
-      // 检查是否是频率限制错误
       const message = error instanceof Error ? error.message : String(error);
 
-      // 检查错误信息中是否包含频率限制错误码
       if (message.includes('99991400') || message.includes('rate limit') || message.includes('频率限制')) {
         return {
           content: [
