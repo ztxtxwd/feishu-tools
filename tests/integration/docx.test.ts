@@ -89,7 +89,7 @@ describe.skipIf(!hasCredentials)("Docx Blocks - Integration Tests", () => {
       // 这是 SDK 的设计行为，迭代器会静默处理错误并返回空的 items
       const args = {
         document_id: "invalid_document_id_12345",
-      };
+      } as Parameters<typeof listDocumentBlocks.callback>[1];
 
       const result = await listDocumentBlocks.callback(context, args, mockExtra);
 
