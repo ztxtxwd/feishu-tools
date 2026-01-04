@@ -1,4 +1,5 @@
 export { batchDeleteBlocks } from "./batch-delete-blocks.js";
+export { deleteBlock } from "./delete-block.js";
 export { listDocumentBlocks } from "./list-blocks.js";
 export { createBlocks } from "./create-blocks.js";
 
