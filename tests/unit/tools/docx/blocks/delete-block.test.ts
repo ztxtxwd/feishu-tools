@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { deleteBlock } from "../../../../../src/tools/docx/blocks/delete-block.js";
 import * as lark from "@larksuiteoapi/node-sdk";
 import { resolveToken } from "../../../../../src/utils/token.js";
+import type { FeishuContext } from "../../../../../src/types.js";
+import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
+import type {
+  ServerRequest,
+  ServerNotification,
+} from "@modelcontextprotocol/sdk/types.js";
+
+const mockExtra = {} as RequestHandlerExtra<ServerRequest, ServerNotification>;
 
 // Mock the lark SDK
 vi.mock("@larksuiteoapi/node-sdk", () => ({
@@ -30,10 +38,13 @@ describe("deleteBlock", () => {
     },
   };
 
-  const mockContext = {
-    client: mockClient,
-    getUserAccessToken: vi.fn(),
-    getTenantAccessToken: vi.fn(),
+  const mockGetUserAccessToken = vi.fn();
+  const mockGetTenantAccessToken = vi.fn();
+
+  const mockContext: FeishuContext = {
+    client: mockClient as unknown as FeishuContext["client"],
+    getUserAccessToken: mockGetUserAccessToken as unknown as FeishuContext["getUserAccessToken"],
+    getTenantAccessToken: mockGetTenantAccessToken as unknown as FeishuContext["getTenantAccessToken"],
   };
 
   // Helper to create async iterator that yields pages with items
@@ -112,10 +123,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockResponse);
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doxcnePuYufKa49ISjhD8Ih0ikh",
-        block_id: "block-2",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doxcnePuYufKa49ISjhD8Ih0ikh",
+          block_id: "block-2",
+        },
+        mockExtra
+      );
 
       expect(resolveToken).toHaveBeenCalledWith(mockContext.getUserAccessToken);
       expect(lark.withUserAccessToken).toHaveBeenCalledWith("user_access_token");
@@ -187,10 +202,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockResponse);
 
-      await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(mockBatchDelete).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -226,10 +245,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockResponse);
 
-      await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(mockListWithIterator).toHaveBeenCalledWith(
         expect.any(Object),
@@ -249,7 +272,8 @@ describe("deleteBlock", () => {
         {
           document_id: "doc123",
           block_id: "block456",
-        }
+        },
+        mockExtra
       );
 
       expect(result).toEqual({
@@ -281,10 +305,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "non-existent-block",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "non-existent-block",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -314,10 +342,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "orphan-block",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "orphan-block",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -347,10 +379,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -381,10 +417,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -423,10 +463,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockErrorResponse);
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -463,10 +507,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockErrorResponse);
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -506,10 +554,14 @@ describe("deleteBlock", () => {
       mockListWithIterator.mockResolvedValue(createAsyncIterator(mockBlocks));
       mockBatchDelete.mockResolvedValue(mockResponse);
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -543,10 +595,14 @@ describe("deleteBlock", () => {
         new Error("API error: 99991400 - Rate limit exceeded")
       );
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -570,10 +626,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockRejectedValue(new Error("Network error"));
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
@@ -595,10 +655,14 @@ describe("deleteBlock", () => {
       });
       mockListWithIterator.mockRejectedValue("String error");
 
-      const result = await deleteBlock.callback(mockContext, {
-        document_id: "doc123",
-        block_id: "block-1",
-      });
+      const result = await deleteBlock.callback(
+        mockContext,
+        {
+          document_id: "doc123",
+          block_id: "block-1",
+        },
+        mockExtra
+      );
 
       expect(result).toEqual({
         content: [
