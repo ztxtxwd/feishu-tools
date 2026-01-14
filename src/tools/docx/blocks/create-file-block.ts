@@ -86,7 +86,7 @@ export const createFileBlock = defineTool({
     file_token: z.string().describe("上传后的文件 token"),
     file_name: z.string().describe("文件名称"),
   },
-  callback: async (context, args) => {
+  callback: async (context, args, _extra) => {
     if (!context.client) {
       return {
         content: [

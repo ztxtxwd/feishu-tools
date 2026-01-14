@@ -55,10 +55,12 @@ describe("createFileBlock", () => {
   };
 
   const mockContext = {
-    client: mockClient,
+    client: mockClient as any,
     getUserAccessToken: vi.fn(),
     getTenantAccessToken: vi.fn(),
   };
+
+  const mockExtra = {} as any;
 
   const mockFileBuffer = Buffer.from("test file content");
 
@@ -70,7 +72,7 @@ describe("createFileBlock", () => {
 
   describe("tool definition", () => {
     it("should have correct name", () => {
-      expect(createFileBlock.name).toBe("create_file_block");
+      expect(createFileBlock.name).toBe("create_file_or_video_block");
     });
 
     it("should have description", () => {
@@ -136,7 +138,7 @@ describe("createFileBlock", () => {
         document_id: "doxcnePuYufKa49ISjhD8Ih0ikh",
         block_id: "doxcnO6UW6wAw2qIcYf4hZpFIth",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(fs.existsSync).toHaveBeenCalledWith("/path/to/file.pdf");
       expect(fs.readFileSync).toHaveBeenCalledWith("/path/to/file.pdf");
@@ -213,7 +215,7 @@ describe("createFileBlock", () => {
         block_id: "block456",
         file_path: "/path/to/original.pdf",
         file_name: "custom.pdf",
-      });
+      } as any, mockExtra);
 
       expect(mockClient.drive.v1.media.uploadAll).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -257,7 +259,7 @@ describe("createFileBlock", () => {
         block_id: "block456",
         file_path: "/path/to/file.pdf",
         index: 2,
-      });
+      } as any, mockExtra);
 
       expect(mockClient.docx.v1.documentBlockChildren.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -301,7 +303,7 @@ describe("createFileBlock", () => {
         block_id: "block456",
         file_content: base64Content,
         file_name: "document.pdf",
-      });
+      } as any, mockExtra);
 
       expect(mockClient.drive.v1.media.uploadAll).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -387,7 +389,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/nonexistent/file.pdf",
-      });
+      }, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -431,7 +433,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/large.pdf",
-      });
+      }, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -461,7 +463,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -491,7 +493,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -526,7 +528,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -562,7 +564,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -600,7 +602,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -646,7 +648,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -673,7 +675,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -696,7 +698,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result).toEqual({
         content: [
@@ -928,7 +930,7 @@ describe("createFileBlock", () => {
         document_id: "doc123",
         block_id: "block456",
         file_path: "/path/to/file.pdf",
-      });
+      } as any, mockExtra);
 
       expect(result.content).toHaveLength(1);
       expect(result.content[0].type).toBe("text");
