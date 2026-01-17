@@ -255,9 +255,9 @@ describe("create_blocks", () => {
                 msg: "success",
                 data: {
                   descendants: [
-                    { block_id: "grid1", block_type: 25 },
-                    { block_id: "col1", block_type: 26 },
-                    { block_id: "col2", block_type: 26 },
+                    { block_id: "grid1", block_type: 24 },
+                    { block_id: "col1", block_type: 25 },
+                    { block_id: "col2", block_type: 25 },
                   ],
                 },
               }),
@@ -273,18 +273,18 @@ describe("create_blocks", () => {
         descendants: [
           {
             block_id: "grid1",
-            block_type: 25,
+            block_type: 24,
             grid: { column_size: 2 },
             children: ["col1", "col2"],
           },
           {
             block_id: "col1",
-            block_type: 26,
+            block_type: 25,
             grid_column: { width_ratio: 1 },
           },
           {
             block_id: "col2",
-            block_type: 26,
+            block_type: 25,
             grid_column: { width_ratio: 1 },
           },
         ],

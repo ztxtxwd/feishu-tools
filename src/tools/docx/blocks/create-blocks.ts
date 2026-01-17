@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
+import { cleanParams } from "../../../utils/clean-params.js";
 
 /**
  * 创建块工具（支持单个或嵌套块）
@@ -109,10 +110,10 @@ export const createBlocks = defineTool({
             document_id,
             block_id: block_id || document_id, // 如果没有指定父块，使用文档ID作为父块
           },
-          params: {
+          params: cleanParams({
             document_revision_id,
             client_token,
-          },
+          }),
           data: {
             children_id,
             index,
