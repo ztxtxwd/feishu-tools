@@ -44,7 +44,7 @@ describe("buildMermaidBlock", () => {
           record: JSON.stringify({
             data: code,
             theme: "default",
-            view: "codeChart",
+            view: "chart",
           }),
         },
       });
@@ -107,13 +107,13 @@ describe("buildMermaidBlock", () => {
       expect(result.structuredContent.add_ons.component_id).toBe("");
     });
 
-    it("should include view as codeChart in record", async () => {
+    it("should include view as chart in record", async () => {
       const result = await buildMermaidBlock.callback(context, {
         code: "graph TD\n  A --> B",
       } as any, extra);
 
       const record = JSON.parse(result.structuredContent.add_ons.record);
-      expect(record.view).toBe("codeChart");
+      expect(record.view).toBe("chart");
     });
 
     it("should return JSON string in content", async () => {
