@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { defineTool } from "../../../define-tool.js";
 import { cleanParams } from "../../../utils/clean-params.js";
+import { resolveToken } from "../../../utils/token.js";
+import * as lark from "@larksuiteoapi/node-sdk";
 
 /**
  * 创建块工具（支持单个或嵌套块）
@@ -103,6 +105,12 @@ export const createBlocks = defineTool({
     } = args;
 
     try {
+      // 解析 User Access Token（如果提供）
+      const userAccessToken = await resolveToken(context.getUserAccessToken);
+      const requestOptions = userAccessToken
+        ? lark.withUserAccessToken(userAccessToken)
+        : undefined;
+
       // 调用创建嵌套块 API
       const result = await context.client.docx.v1.documentBlockDescendant.create(
         {
@@ -119,7 +127,8 @@ export const createBlocks = defineTool({
             index,
             descendants,
           },
-        }
+        },
+        requestOptions
       );
 
       if (result.code !== 0) {

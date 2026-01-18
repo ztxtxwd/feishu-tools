@@ -71,20 +71,22 @@ const calloutBlockOutputSchema = {
  * 构建 Callout Block 工具
  *
  * 用于构建飞书文档的高亮块（Callout）数据结构，不执行实际的 API 调用。
- * 返回的数据可用于 create_block 等 API。
+ * 返回的数据可用于 create_blocks 等 API。
  *
- * Callout 块是一个容器块，可以包含子块（如文本块、列表块等）。
- * 子块需要通过 create_block API 单独添加。
+ * **重要说明**：
+ * - Callout 块是一个容器块，**不能为空**，必须包含至少一个子块（如文本块、列表块等）
+ * - 创建 Callout 块时，必须在 descendants 数组中同时提供 Callout 块和至少一个子块
+ * - 子块需要在 Callout 块的 children 字段中引用
  */
 export const buildCalloutBlock = defineTool({
   name: "build_callout_block",
   description: {
     summary:
-      "构建飞书文档的 Callout 块（高亮块）数据结构。高亮块用于突出显示重要内容，支持自定义背景色、边框色、文字颜色和 emoji 图标。",
+      "构建飞书文档的 Callout 块（高亮块）数据结构。高亮块用于突出显示重要内容，支持自定义背景色、边框色、文字颜色和 emoji 图标。**注意：Callout 块必须包含至少一个子块，不能为空。**",
     bestFor:
       "创建提示框、警告框、注意事项、重要信息高亮显示、带图标的信息块",
     notRecommendedFor:
-      "需要直接操作文档时（请使用 create_block）、添加子块内容时（需单独调用 create_block）",
+      "需要直接操作文档时（请使用 create_blocks）、创建空的 Callout 块（必须包含至少一个子块）",
   },
   inputSchema: calloutBlockInputSchema,
   outputSchema: calloutBlockOutputSchema,

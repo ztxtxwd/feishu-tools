@@ -242,7 +242,7 @@ describe("create_blocks", () => {
           index: undefined,
           descendants: args.descendants,
         },
-      });
+      }, undefined); // requestOptions is undefined when no UAT provided
     });
 
     it("should create nested blocks successfully", async () => {
@@ -329,7 +329,8 @@ describe("create_blocks", () => {
             document_id: "doc123",
             block_id: "parent456",
           }),
-        })
+        }),
+        undefined
       );
     });
 
@@ -363,7 +364,8 @@ describe("create_blocks", () => {
             document_id: "doc123",
             block_id: "doc123",
           }),
-        })
+        }),
+        undefined
       );
     });
 
@@ -409,7 +411,7 @@ describe("create_blocks", () => {
           index: 3,
           descendants: [],
         },
-      });
+      }, undefined);
     });
 
     it("should handle API error response with non-zero code", async () => {
@@ -547,6 +549,97 @@ describe("create_blocks", () => {
         const parsedData = JSON.parse(result.content[0].text);
         expect(parsedData).toEqual(mockResponseData);
       }
+    });
+
+    it("should pass User Access Token when provided", async () => {
+      const mockClient = {
+        docx: {
+          v1: {
+            documentBlockDescendant: {
+              create: vi.fn().mockResolvedValue({
+                code: 0,
+                msg: "success",
+                data: {
+                  descendants: [{ block_id: "block_123", block_type: 2 }],
+                },
+              }),
+            },
+          },
+        },
+      };
+
+      const mockUserAccessToken = "user_access_token_xyz";
+      const context = {
+        client: mockClient,
+        getUserAccessToken: async () => mockUserAccessToken,
+      };
+
+      const args = {
+        document_id: "doc123",
+        children_id: ["block1"],
+        descendants: [
+          {
+            block_id: "block1",
+            block_type: 2,
+            text: { style: {}, elements: [{ text_run: { content: "Test" } }] },
+          },
+        ],
+      };
+
+      const result = await createBlocks.callback(context, args, mockExtra);
+
+      expect(result.isError).toBeUndefined();
+
+      // Verify that the API was called with requestOptions containing the UAT
+      const callArgs = mockClient.docx.v1.documentBlockDescendant.create.mock.calls[0];
+      expect(callArgs[0]).toMatchObject({
+        path: {
+          document_id: "doc123",
+        },
+      });
+
+      // The second argument should be the requestOptions created by lark.withUserAccessToken
+      expect(callArgs[1]).toBeDefined();
+      expect(callArgs[1]).toHaveProperty("lark");
+    });
+
+    it("should handle static User Access Token string", async () => {
+      const mockClient = {
+        docx: {
+          v1: {
+            documentBlockDescendant: {
+              create: vi.fn().mockResolvedValue({
+                code: 0,
+                msg: "success",
+                data: {
+                  descendants: [{ block_id: "block_123", block_type: 2 }],
+                },
+              }),
+            },
+          },
+        },
+      };
+
+      const mockUserAccessToken = "static_uat_token";
+      const context = {
+        client: mockClient,
+        getUserAccessToken: mockUserAccessToken, // Static string instead of function
+      };
+
+      const args = {
+        document_id: "doc123",
+        children_id: ["block1"],
+        descendants: [],
+      };
+
+      const result = await createBlocks.callback(context, args, mockExtra);
+
+      expect(result.isError).toBeUndefined();
+
+      // Verify that the API was called with requestOptions
+      const callArgs = mockClient.docx.v1.documentBlockDescendant.create.mock.calls[0];
+      expect(callArgs[1]).toBeDefined();
+      expect(callArgs[1]).toHaveProperty("lark");
     });
   });
 });
