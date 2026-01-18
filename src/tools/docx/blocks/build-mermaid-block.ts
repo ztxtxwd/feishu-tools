@@ -101,7 +101,7 @@ export const buildMermaidBlock = defineTool({
     const record: MermaidRecord = {
       data: args.code,
       theme,
-      view: "codeChart",
+      view: "chart",
     };
 
     const block = {
